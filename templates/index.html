@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="home-container">
+    <h2>Welcome to the School Cafeteria Menu System</h2>
+    <p>This system allows teachers to select lunch options for their students.</p>
+
+    <div class="home-links">
+        <a href="{{ url_for('login') }}" class="btn">Teacher Login</a>
+        <a href="{{ url_for('admin_menu') }}" class="btn">View All Orders</a>
+    </div>
+</div>
+{% endblock %}

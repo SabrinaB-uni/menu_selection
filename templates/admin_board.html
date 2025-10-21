@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-container">
+    <h2>All Student Lunch Orders</h2>
+
+    <!-- Filter Form -->
+    <form method="get" class="filter-form">
+        <div class="filters">
+            <div class="filter-group">
+                <label for="filter_date">Filter by Date:</label>
+                <input type="date" name="filter_date" id="filter_date"
+                       value="{{ request.args.get('filter_date', '') }}">
+            </div>
+            <div class="filter-group">
+                <label for="filter_class">Filter by Class:</label>
+                <select name="filter_class" id="filter_class">
+                    <option value="">All Classes</option>
+                    {% for class in classes %}
+                        <option value="{{ class.class_id }}"
+                            {% if request.args.get(filter_class)|int == class.class_id %}selected{% endif %}>
+                            {{ class.class_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn filter-btn">Filter</button>
+            <a href="{{ url_for('admin_menu') }}" class="btn reset-btn">Reset</a>
+        </div>
+    </form>
+
+    <!-- Results Table -->
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Item</th>
+                <th>Week</th>
+                <th>Cycle</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for choice in choices %}
+            <tr>
+                <td>{{ choice.student.first_name }} {{ choice.student.last_name }}</td>
+                <td>{{ choice.student.class_ref.class_name }}</td>
+                <td>{{ choice.choice_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ choice.day_of_week }}</td>
+                <td>{{ choice.menu_item.item_name }}</td>
+                <td>{{ choice.week_number or 'N/A' }}</td>
+                <td>{{ choice.cycle_number or 'N/A' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="no-data">No orders found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
