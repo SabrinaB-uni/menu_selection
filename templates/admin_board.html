@@ -16,10 +16,12 @@
                 <select name="filter_class" id="filter_class">
                     <option value="">All Classes</option>
                     {% for class in classes %}
-                        <option value="{{ class.class_id }}"
-                            {% if request.args.get(filter_class)|int == class.class_id %}selected{% endif %}>
-                            {{ class.class_name }}
-                        </option>
+                    {% set filter_class_value = request.args.get('filter_class', '') %}
+                    <option value="{{ class.class_id }}"
+                            {% if filter_class_value and filter_class_value.isdigit() and filter_class_value|int==
+                            class.class_id %}selected{% endif %}>
+                        {{ class.class_name }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>

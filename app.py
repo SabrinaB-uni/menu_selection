@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, date, timedelta
 from database import db, Teacher, Student, MenuItem, Choice, WeekCycle, Class
 
+
 DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 app = Flask(__name__)
@@ -45,7 +46,7 @@ def teacher_board():
     if not teacher:
         return redirect(url_for('login'))
 
-    # Which Monday? Default = current week's Monday
+    # Default = current week's Monday
     week_start_str = request.args.get('week_start')
     today = date.today()
     monday = today - timedelta(days=today.weekday())
@@ -81,7 +82,7 @@ def submit_week():
 
     week_start = datetime.strptime(request.form['week_start'], '%Y-%m-%d').date()
 
-    # Clear existing choices for that class & week
+    # choices for the class and week
     Choice.query.filter_by(class_id=teacher.class_id) \
         .filter(Choice.choice_date.between(week_start, week_start + timedelta(days=4))) \
         .delete()
