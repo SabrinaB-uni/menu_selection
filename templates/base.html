@@ -11,24 +11,29 @@
         <h1>School Cafeteria Menu</h1>
         <div class="nav-links">
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('login') }}">Teacher Login</a>
-            <a href="{{ url_for('admin_menu') }}">Admin</a>
-            {% if session.get('teacher_id') %}
-                <a href="{{ url_for('logout') }}">Logout</a>
-            {% endif %}
+            <a href="{{ url_for('admin_board') }}">Admin Dashboard</a>
         </div>
     </nav>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">
+                        {{ message }}
+                        <button onclick="this.parentElement.style.display='none'">×</button>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
     {% endwith %}
 
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <footer>
+        <p>&copy; 2024 School Cafeteria Menu System</p>
+    </footer>
 </body>
 </html>

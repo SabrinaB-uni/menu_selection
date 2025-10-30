@@ -1,47 +1,190 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="teacher-menu">
-    <h2>{{ teacher.first_name }} {{ teacher.last_name }} - {{ teacher.class_ref.class_name }}</h2>
+    <h2>{{ class_info.name }} - Lunch Selection</h2>
+    <p class="date-info">Selecting lunch for: <strong>{{ today }}</strong></p>
 
-    <form method="post" action="{{ url_for('submit_week') }}" class="week-form">
-        <div class="week-selector">
-            <label for="week_start">Week beginning (Monday):</label>
-            <input type="date" name="week_start" id="week_start" value="{{ week_start }}" required>
-            <button type="submit" class="btn save-btn">Save All Orders</button>
-        </div>
+    <!-- Today's Choices Summary -->
+    {% if today_choices %}
+    <div class="today-summary">
+        <h3>Today's Selections</h3>
+        <ul>
+            {% for choice in today_choices %}
+            <li>{{ choice.student_name }}: {{ choice.menu_item_name }}</li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('clear_today_choices', class_id=class_info.id) }}"
+           class="btn clear-btn"
+           onclick="return confirm('Are you sure you want to clear today\'s choices?')">
+            Clear Today's Choices
+        </a>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('save_selections') }}">
+        <input type="hidden" name="class_id" value="{{ class_info.id }}">
 
         <table class="menu-table">
             <thead>
                 <tr>
-                    <th>Student</th>
-                    {% for day in DAYS %}
-                        <th>{{ day }}</th>                    {% for day in DAYS %}
-                        <th>{{ day }}</th>
-                    {% endfor %}
+                    <th>Student Name</th>
+                    <th>Lunch Choice</th>
                 </tr>
             </thead>
             <tbody>
                 {% for student in students %}
                 <tr>
-                    <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
-                    {% for day in DAYS %}
+                    <td class="student-name">{{ student.name }}</td>
                     <td>
-                        {% set existing_key = student.student_id|string + '-' + day %}
-                        <select name="c-{{ student.student_id }}-{{ day }}" class="menu-select">
-                            <option value="">-- None --</option>
+                        <select name="student_{{ student.id }}" class="menu-select">
+                            <option value="">-- Select Lunch --</option>
                             {% for item in menu_items %}
-                                <option value="{{ item.item_id }}"
-                                    {% if existing_choices.get(existing_key) == item.item_id %}selected{% endif %}>
-                                    {{ item.item_name }}
-                                </option>
+                                <option value="{{ item.id }}">{{ item.name }}</option>
                             {% endfor %}
                         </select>
                     </td>
-                    {% endfor %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="no-data">No students found in this class</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+        {% if students %}
+        <div class="form-actions">
+            <button type="submit" class="btn save-btn">Save Selections</button>
+            <a href="{{ url_for('index') }}" class="btn cancel-btn">Cancel</a>
+        </div>
+        {% endif %}
     </form>
 </div>
+
+<style>
+    .teacher-menu {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .date-info {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 18px;
+    }
+
+    .today-summary {
+        background-color: #e3f2fd;
+        border: 1px solid #90caf9;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .today-summary h3 {
+        margin-top: 0;
+        color: #1976d2;
+    }
+
+    .today-summary ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+
+    .clear-btn {
+        background-color: #ff9800;
+        color: white;
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+
+    .menu-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .menu-table th,
+    .menu-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .menu-table th {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .menu-table tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .student-name {
+        font-weight: 500;
+    }
+
+    .menu-select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: white;
+    }
+
+    .form-actions {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 0 5px;
+        text-decoration: none;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    .save-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .save-btn:hover {
+        background-color: #45a049;
+    }
+
+    .cancel-btn {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .cancel-btn:hover {
+        background-color: #da190b;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+    }
+</style>
+
+<script>
+    // Add today's date to the page
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toLocaleDateString('en-GB', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.querySelector('.date-info strong').textContent = today;
+    });
+</script>
 {% endblock %}

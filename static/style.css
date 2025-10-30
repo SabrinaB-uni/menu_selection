@@ -1,4 +1,4 @@
-/* Reset and base styles */
+/* ===== Reset and Base Styles ===== */
 * {
     margin: 0;
     padding: 0;
@@ -6,306 +6,492 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
     color: #333;
-    background-color: #f4f4f4;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Navigation */
+/* ===== Navigation ===== */
 nav {
     background-color: #2c3e50;
     color: white;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 1rem 0;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 nav h1 {
-    font-size: 1.5rem;
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    font-weight: 300;
 }
 
 .nav-links {
     display: flex;
+    justify-content: center;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
-nav a {
+.nav-links a {
     color: white;
     text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: background-color 0.3s;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    background-color: rgba(255,255,255,0.1);
 }
 
-nav a:hover {
-    background-color: #34495e;
+.nav-links a:hover {
+    background-color: #3498db;
+    transform: translateY(-2px);
 }
 
-/* Main container */
+/* ===== Main Content ===== */
 main {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    flex: 1;
+    padding: 2rem;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
 }
 
-/* Flash messages */
-.flash {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
+/* ===== Footer ===== */
+footer {
+    background-color: #34495e;
+    color: white;
     text-align: center;
+    padding: 1rem;
+    margin-top: auto;
+}
+
+/* ===== Flash Messages ===== */
+.flash-messages {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.flash {
+    padding: 1rem 2rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    position: relative;
+    animation: slideInRight 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.flash button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.flash button:hover {
+    opacity: 1;
 }
 
 .flash.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background-color: #27ae60;
+    color: white;
 }
 
-/* Buttons */
-.btn {
-    display: inline-block;
-    padding: 0.5rem 1rem;
+.flash.error {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.flash.warning {
+    background-color: #f39c12;
+    color: white;
+}
+
+.flash.info {
     background-color: #3498db;
     color: white;
-    text-decoration: none;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 1rem;
 }
 
-.btn:hover {
-    background-color: #2980b9;
+/* ===== Home Page ===== */
+.home-container {
+    text-align: center;
+    padding: 2rem;
+}
+
+.home-container h2 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-weight: 300;
+}
+
+.home-container p {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    margin-bottom: 2rem;
+}
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.class-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 2px solid transparent;
+}
+
+.class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    border-color: #3498db;
+}
+
+.class-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #3498db;
+}
+
+.class-card p {
+    color: #95a5a6;
+    font-size: 0.9rem;
+}
+
+/* ===== Teacher Menu Page ===== */
+.teacher-menu {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.teacher-menu h2 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.date-info {
+    color: #7f8c8d;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.date-info strong {
+    color: #3498db;
+}
+
+/* Today's Summary Box */
+.today-summary {
+    background-color: #ecf0f1;
+    border-left: 4px solid #3498db;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.today-summary h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.today-summary ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.today-summary li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #bdc3c7;
+}
+
+.today-summary li:last-child {
+    border-bottom: none;
+}
+
+/* ===== Tables ===== */
+.menu-table,
+.admin-table,
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.menu-table th,
+.admin-table th,
+.stats-table th {
+    background-color: #3498db;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+}
+
+.menu-table td,
+.admin-table td,
+.stats-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.menu-table tr:last-child td,
+.admin-table tr:last-child td,
+.stats-table tr:last-child td {
+    border-bottom: none;
+}
+
+.menu-table tr:hover,
+.admin-table tr:hover,
+.stats-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.student-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* ===== Form Elements ===== */
+.menu-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ecf0f1;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: white;
+    transition: border-color 0.3s;
+    cursor: pointer;
+}
+
+.menu-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.menu-select:hover {
+    border-color: #bdc3c7;
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    margin: 0.5rem;
+    text-decoration: none;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-align: center;
 }
 
 .save-btn {
     background-color: #27ae60;
+    color: white;
 }
 
 .save-btn:hover {
     background-color: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39,174,96,0.3);
+}
+
+.cancel-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231,76,60,0.3);
+}
+
+.clear-btn {
+    background-color: #f39c12;
+    color: white;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+.clear-btn:hover {
+    background-color: #e67e22;
 }
 
 .filter-btn {
-    background-color: #9b59b6;
+    background-color: #3498db;
+    color: white;
 }
 
 .filter-btn:hover {
-    background-color: #8e44ad;
+    background-color: #2980b9;
 }
 
 .reset-btn {
     background-color: #95a5a6;
+    color: white;
 }
 
 .reset-btn:hover {
     background-color: #7f8c8d;
 }
 
-/* Home page */
-.home-container {
-    background-color: white;
-    padding: 3rem;
-    border-radius: 8px;
+/* ===== Form Actions ===== */
+.form-actions {
     text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.home-container h2 {
-    margin-bottom: 1rem;
-    color: #2c3e50;
-}
-
-.home-links {
+    padding: 2rem 0;
+    border-top: 1px solid #ecf0f1;
     margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
 }
 
-/* Login page */
-.login-container {
-    max-width: 400px;
-    margin: 0 auto;
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.login-form select {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-/* Teacher board */
-.teacher-board {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.week-selector {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background-color: #ecf0f1;
-    border-radius: 4px;
-}
-
-.week-selector input[type="date"] {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-/* Menu table */
-.menu-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
-}
-
-.menu-table th,
-.menu-table td {
-    border: 1px solid #ddd;
-    padding: 0.75rem;
-    text-align: left;
-}
-
-.menu-table th {
-    background-color: #34495e;
-    color: white;
-    font-weight: bold;
-}
-
-.menu-table tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-.student-name {
-    font-weight: 500;
-    background-color: #ecf0f1;
-}
-
-.menu-select {
-    width: 100%;
-    padding: 0.3rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-/* Admin page */
+/* ===== Admin Page ===== */
 .admin-container {
-    background-color: white;
+    background: white;
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
 }
 
-.filter-form {
+.admin-container h2 {
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+.admin-container h3 {
+    color: #34495e;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+}
+
+.stats-summary {
+    background-color: #ecf0f1;
+    border-radius: 8px;
+    padding: 1.5rem;
     margin-bottom: 2rem;
 }
 
-.filters {
-    display: flex;
-    gap: 1rem;
-    align-items: end;
-    padding: 1rem;
-    background-color: #ecf0f1;
-    border-radius: 4px;
+.admin-actions {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #ecf0f1;
 }
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-group label {
-    margin-bottom: 0.3rem;
-    font-weight: 500;
-}
-
-.filter-group input,
-.filter-group select {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.admin-table th,
-.admin-table td {
-    border: 1px solid #ddd;
-    padding: 0.75rem;
-    text-align: left;
-}
-
-.admin-table th {
-    background-color: #2c3e50;
-    color: white;
-}
-
-.admin-table tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
+/* ===== Utility Classes ===== */
 .no-data {
     text-align: center;
-    color: #7f8c8d;
+    color: #95a5a6;
     font-style: italic;
+    padding: 2rem;
 }
 
-/* Responsive design */
+/* ===== Responsive Design ===== */
 @media (max-width: 768px) {
-    nav {
-        flex-direction: column;
-        gap: 1rem;
+    nav h1 {
+        font-size: 1.5rem;
     }
 
     .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .filters {
         flex-direction: column;
+        align-items: center;
     }
 
-    .menu-table {
+    main {
+        padding: 1rem;
+    }
+
+    .class-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .teacher-menu {
+        padding: 1rem;
+    }
+
+    .menu-table,
+    .admin-table {
         font-size: 0.9rem;
     }
 
-    .menu-table th,
-    .menu-table td {
-        padding: 0.5rem;
-    }
-
-    .admin-table {
-        font-size: 0.85rem;
+    .flash-messages {
+        right: 10px;
+        left: 10px;
+        max-width: none;
     }
 }
 
+/* ===== Print Styles ===== */
+@media print {
+    nav, footer, .form-actions, .btn, .flash-messages {
+        display: none;
+    }
+
+    main {
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .teacher-menu,
+    .admin-container {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* ===== Loading Animation ===== */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
