@@ -3,7 +3,7 @@ import sqlite3
 from datetime import datetime, timedelta
 import os
 
-DB_PATH = 'cafeteria.db'
+DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
 
 app = Flask(__name__)
 app.secret_key = 'my-cafeteria-app-secret-key-2024'
@@ -50,6 +50,14 @@ def init_db():
         FOREIGN KEY (class_id)     REFERENCES Class(id),
         UNIQUE(student_id, date)
     );
+
+    CREATE TABLE IF NOT EXISTS Menu_Availability (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_item_id INTEGER NOT NULL,
+        day_of_week  INTEGER NOT NULL, -- 0=Monday, 1=Tuesday, etc.
+        FOREIGN KEY (menu_item_id) REFERENCES Menu_Items(id),
+        UNIQUE(menu_item_id, day_of_week)
+    );
     """
     with get_db_connection() as conn:
         conn.executescript(sql)
@@ -63,6 +71,25 @@ def get_classes():
 def get_menu_items():
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY name').fetchall()
+
+
+def get_menu_items_for_day(day_of_week):
+    """Get menu items available for a specific day (0=Monday, 4=Friday)"""
+    with get_db_connection() as conn:
+        # First check if we have any availability rules
+        availability_count = conn.execute('SELECT COUNT(*) FROM Menu_Availability').fetchone()[0]
+
+        if availability_count == 0:
+            # No rules set, return all items
+            return conn.execute('SELECT * FROM Menu_Items ORDER BY name').fetchall()
+        else:
+            # Return only items available on this day
+            return conn.execute('''
+                SELECT DISTINCT m.* FROM Menu_Items m
+                JOIN Menu_Availability ma ON m.id = ma.menu_item_id
+                WHERE ma.day_of_week = ?
+                ORDER BY m.name
+            ''', (day_of_week,)).fetchall()
 
 
 def get_students_by_class(class_id):
@@ -131,43 +158,129 @@ def get_week_choices_by_class(class_id, start_date):
         return student_choices
 
 
-def get_all_choices():
+def get_week_summary(start_date):
+    """Get summary of all choices for a week grouped by menu item"""
+    end_date = datetime.strptime(start_date, '%Y-%m-%d') + timedelta(days=4)
     with get_db_connection() as conn:
         return conn.execute("""
-            SELECT c.*,
-                   s.name  AS student_name,
-                   m.name  AS menu_item_name,
-                   cl.name AS class_name
-            FROM Choices c
-            JOIN Student    s  ON c.student_id   = s.id
-            JOIN Menu_Items m  ON c.menu_item_id = m.id
-            JOIN Class      cl ON c.class_id     = cl.id
-            ORDER BY c.date DESC, cl.name, s.name
-        """).fetchall()
-
-
-def get_choice_statistics():
-    with get_db_connection() as conn:
-        return conn.execute("""
-            SELECT m.name AS menu_item, 
-                   COUNT(*) AS count,
-                   DATE(c.date) as choice_date
+            SELECT m.name as menu_item, 
+                   COUNT(*) as total,
+                   c.date
             FROM Choices c
             JOIN Menu_Items m ON c.menu_item_id = m.id
-            GROUP BY m.name, DATE(c.date)
-            ORDER BY choice_date DESC, count DESC
-        """).fetchall()
+            WHERE c.date >= ? AND c.date <= ?
+            GROUP BY m.name, c.date
+            ORDER BY c.date, m.name
+        """, (start_date, end_date.strftime('%Y-%m-%d'))).fetchall()
+
+
+def get_week_summary_totals(start_date):
+    """Get total quantities needed for each menu item for the week"""
+    end_date = datetime.strptime(start_date, '%Y-%m-%d') + timedelta(days=4)
+    with get_db_connection() as conn:
+        results = conn.execute("""
+            SELECT m.name as menu_item, 
+                   COUNT(*) as total_portions
+            FROM Choices c
+            JOIN Menu_Items m ON c.menu_item_id = m.id
+            WHERE c.date >= ? AND c.date <= ?
+            GROUP BY m.name
+            ORDER BY total_portions DESC
+        """, (start_date, end_date.strftime('%Y-%m-%d'))).fetchall()
+
+        # Debug: print results
+        print(f"Query results for {start_date} to {end_date.strftime('%Y-%m-%d')}:")
+        for row in results:
+            print(f"  {row['menu_item']}: {row['total_portions']}")
+
+        return results
+
+
+def get_daily_breakdown_by_class(start_date):
+    """Get choices broken down by day, class, and menu item"""
+    end_date = datetime.strptime(start_date, '%Y-%m-%d') + timedelta(days=4)
+    with get_db_connection() as conn:
+        # Get all classes
+        classes = conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
+
+        # Get all menu items
+        menu_items = conn.execute('SELECT * FROM Menu_Items ORDER BY name').fetchall()
+
+        # Get the data
+        results = conn.execute("""
+            SELECT 
+                ch.date,
+                cl.name as class_name,
+                cl.id as class_id,
+                m.name as menu_item,
+                m.id as menu_item_id,
+                COUNT(*) as quantity
+            FROM Choices ch
+            JOIN Class cl ON ch.class_id = cl.id
+            JOIN Menu_Items m ON ch.menu_item_id = m.id
+            WHERE ch.date >= ? AND ch.date <= ?
+            GROUP BY ch.date, cl.name, m.name
+            ORDER BY ch.date, cl.name, m.name
+        """, (start_date, end_date.strftime('%Y-%m-%d'))).fetchall()
+
+        # Organize by day
+        daily_data = {}
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+
+        # Initialize all weekdays
+        for i in range(5):  # Monday to Friday
+            date = (start_dt + timedelta(days=i)).strftime('%Y-%m-%d')
+            day_name = (start_dt + timedelta(days=i)).strftime('%A')
+            daily_data[date] = {
+                'day_name': day_name,
+                'classes': [{'name': cls['name'], 'id': cls['id']} for cls in classes],
+                'menu_items': [{'name': item['name'], 'id': item['id']} for item in menu_items],
+                'data': {},  # Will store class_id -> menu_item_id -> quantity
+                'class_totals': {},  # class_id -> total
+                'item_totals': {}  # menu_item_id -> total
+            }
+
+            # Initialize data structure
+            for cls in classes:
+                daily_data[date]['data'][cls['id']] = {}
+                daily_data[date]['class_totals'][cls['id']] = 0
+                for item in menu_items:
+                    daily_data[date]['data'][cls['id']][item['id']] = 0
+
+            for item in menu_items:
+                daily_data[date]['item_totals'][item['id']] = 0
+
+        # Fill in the actual data
+        for row in results:
+            date = row['date']
+            if date in daily_data:
+                class_id = row['class_id']
+                menu_item_id = row['menu_item_id']
+                quantity = row['quantity']
+
+                daily_data[date]['data'][class_id][menu_item_id] = quantity
+                daily_data[date]['class_totals'][class_id] += quantity
+                daily_data[date]['item_totals'][menu_item_id] += quantity
+
+        return daily_data
 
 
 def get_next_week_monday():
     """Get the Monday of the NEXT week"""
     today = datetime.now().date()
     days_since_monday = today.weekday()
-    # Get this week's Monday
     this_monday = today - timedelta(days=days_since_monday)
-    # Get next week's Monday
     next_monday = this_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
+
+
+def get_week_cycle(date_str):
+    """Calculate week cycle (1-3) based on week number"""
+    date = datetime.strptime(date_str, '%Y-%m-%d')
+    week_number = date.isocalendar()[1]
+    # Simple 3-week cycle
+    cycle = ((week_number - 1) % 3) + 1
+    return cycle
 
 
 # Routes
@@ -187,34 +300,33 @@ def teacher_menu(class_id):
         flash('Class not found', 'error')
         return redirect(url_for('index'))
 
-    # Get NEXT week's Monday
     next_monday = get_next_week_monday()
-
-    # Get choices for next week
     student_choices = get_week_choices_by_class(class_id, next_monday)
 
-    # Calculate week number for next week
     start_date = datetime.strptime(next_monday, '%Y-%m-%d')
     week_number = start_date.isocalendar()[1]
+    week_cycle = get_week_cycle(next_monday)
 
-    # Generate dates for next week (Monday to Friday)
+    # Generate dates with menu items for each day
     week_dates = []
     for i in range(5):  # Monday to Friday
         date = start_date + timedelta(days=i)
         week_dates.append({
             'date': date.strftime('%Y-%m-%d'),
             'day_name': date.strftime('%A'),
-            'display_date': date.strftime('%d-%b'),  # Format: 21-Oct
+            'display_date': date.strftime('%d-%b'),
+            'day_index': i,
+            'menu_items': get_menu_items_for_day(i)
         })
 
     return render_template(
         'teacher_menu.html',
         class_info=class_info,
-        menu_items=get_menu_items(),
         students=get_students_by_class(class_id),
         student_choices=student_choices,
         week_dates=week_dates,
-        week_number=week_number
+        week_number=week_number,
+        week_cycle=week_cycle
     )
 
 
@@ -240,14 +352,43 @@ def auto_save():
 
 @app.route('/admin')
 def admin_board():
+    next_monday = get_next_week_monday()
+    start_date = datetime.strptime(next_monday, '%Y-%m-%d')
+    week_number = start_date.isocalendar()[1]
+    week_cycle = get_week_cycle(next_monday)
+
+    # Generate week dates for display
+    week_dates = []
+    for i in range(5):
+        date = start_date + timedelta(days=i)
+        week_dates.append({
+            'display_date': date.strftime('%d-%b'),
+            'date': date.strftime('%Y-%m-%d')
+        })
+
+    # Get daily breakdown for the 5 tables
+    daily_breakdown = get_daily_breakdown_by_class(next_monday)
+
     return render_template(
-        'admin_board.html',
-        choices=get_all_choices(),
-        stats=get_choice_statistics()
+        'summary_board.html',
+        weekly_totals=get_week_summary_totals(next_monday),
+        daily_breakdown=daily_breakdown,
+        week_number=week_number,
+        week_cycle=week_cycle,
+        week_dates=week_dates,
+        start_date=week_dates[0]['display_date'],
+        end_date=week_dates[4]['display_date']
     )
 
+
 if __name__ == '__main__':
+    # Verify database exists and print path
+    print(f"Using database at: {os.path.abspath(DB_PATH)}")
     if not os.path.exists(DB_PATH):
+        print(f"Database not found! Creating new database at: {DB_PATH}")
         init_db()
-        print('Created cafeteria.db with all tables.')
+        print('Created menu_selection.db with all tables.')
+    else:
+        print("Database found successfully!")
+
     app.run(host="0.0.0.0", port=5000, debug=True)

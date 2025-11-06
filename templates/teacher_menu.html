@@ -29,10 +29,10 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Week info section -->
+              <!-- Week info section -->
         <div class="week-info">
             <span class="week-dates">{{ week_dates[0].display_date }} - {{ week_dates[-1].display_date }}</span>
-            <span class="week-number">Week {{ week_number }}</span>
+            <span class="week-number">Week {{ week_number }} - Cycle {{ week_cycle }}</span>
         </div>
 
         <div class="lunch-table-container">
@@ -60,7 +60,7 @@
                                 data-date="{{ day.date }}"
                                 data-class-id="{{ class_info.id }}">
                                 <option value="">-</option>
-                                {% for item in menu_items %}
+                                {% for item in day.menu_items %}
                                     <option value="{{ item.id }}"
                                         {% if choice_id == item.id %}selected{% endif %}>
                                         {{ item.name }}
@@ -79,9 +79,6 @@
     </div>
 
     <script>
-        let saveTimeout = null;
-        const saveStatus = document.getElementById('save-status');
-            <script>
         let saveTimeout = null;
         const saveStatus = document.getElementById('save-status');
 
