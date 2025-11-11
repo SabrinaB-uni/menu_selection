@@ -3,22 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summary Dashboard - School Lunch Choice System</title>
+    <title>Admin Dashboard - School Lunch Choice System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        .week-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .week-selector label {
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+                .week-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 400px;
+        }
+
         .daily-summaries {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
             margin: 30px 0;
         }
 
         .daily-summary {
             border: 1px solid #ddd;
             border-radius: 8px;
-            padding: 15px;
+            padding: 20px;
             background-color: #f9f9f9;
             overflow-x: auto;
+            width: 100%;
         }
 
         .daily-summary h3 {
@@ -26,28 +49,28 @@
             color: #333;
             border-bottom: 2px solid #28a745;
             padding-bottom: 8px;
-            font-size: 1.1em;
+            font-size: 1.2em;
             text-align: center;
         }
 
         .matrix-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85em;
-            min-width: 300px;
+            font-size: 0.9em;
+            min-width: 400px;
         }
 
         .matrix-table th,
         .matrix-table td {
             border: 1px solid #ddd;
-            padding: 6px;
+            padding: 8px;
             text-align: center;
         }
 
         .matrix-table th {
             background-color: #f8f9fa;
             color: #333;
-            font-size: 0.8em;
+            font-size: 0.85em;
             font-weight: bold;
         }
 
@@ -55,7 +78,7 @@
             background-color: #f8f9fa;
             font-weight: bold;
             text-align: left;
-            padding-left: 10px;
+            padding-left: 15px;
         }
 
         .matrix-table .total-row {
@@ -81,16 +104,17 @@
             text-align: center;
             color: #666;
             font-style: italic;
-            padding: 20px;
+            padding: 30px;
+            font-size: 1.1em;
         }
 
         @media print {
-            .daily-summaries {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
+            .week-selector, .header-nav {
+                display: none;
             }
-            .matrix-table {
-                font-size: 0.75em;
+            .daily-summary {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
             }
         }
     </style>
@@ -102,9 +126,24 @@
             <h2>Weekly lunch order summary</h2>
             <div class="header-nav">
                 <a href="{{ url_for('index') }}" class="nav-btn">← Home</a>
-                <button onclick="window.print()" class="nav-btn">Print</button>
-                <button onclick="location.reload()" class="nav-btn">Refresh</button>
             </div>
+        </div>
+
+        <!-- Week Selector -->
+        <div class="week-selector">
+            <label for="weekSelect">Select Week:</label>
+            <select id="weekSelect" onchange="changeWeek()">
+                {% if available_weeks %}
+                    {% for week in available_weeks %}
+                    <option value="{{ week.start_date }}"
+                            {% if week.start_date == selected_week %}selected{% endif %}>
+                        Week {{ week.week_number }} ({{ week.start_date }} to {{ week.end_date }}) - Cycle {{ week.cycle_number }}
+                    </option>
+                    {% endfor %}
+                {% else %}
+                    <option value="{{ selected_week }}">Current Week</option>
+                {% endif %}
+            </select>
         </div>
 
         <!-- Week info section -->
@@ -117,7 +156,7 @@
         <div class="daily-summaries">
             {% for date, day_data in daily_breakdown.items() %}
             <div class="daily-summary">
-                <h3>{{ day_data.day_name }}</h3>
+                <h3>{{ day_data.day_name }} - {{ date }}</h3>
                 {% if day_data.menu_items and day_data.classes %}
                 <table class="matrix-table">
                     <thead>
@@ -156,41 +195,16 @@
             </div>
             {% endfor %}
         </div>
-
-        <!-- Weekly Overview Section -->
-        <div class="admin-container">
-            <div class="admin-section">
-                <h3>Weekly Food Totals Overview</h3>
-                {% if weekly_totals %}
-                <table class="summary-table">
-                    <thead>
-                        <tr>
-                            <th>Menu Item</th>
-                            <th class="text-center">Total Quantity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in weekly_totals %}
-                        <tr>
-                            <td>{{ item.menu_item }}</td>
-                            <td class="text-center">{{ item.total_portions }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr class="total-row">
-                            <td><strong>Total Meals</strong></td>
-                            <td class="text-center">
-                                <strong>{{ weekly_totals|sum(attribute='total_portions') }}</strong>
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-                {% else %}
-                <p class="no-data">No lunch selections yet for this week.</p>
-                {% endif %}
-            </div>
-        </div>
     </div>
+
+    <script>
+        function changeWeek() {
+            const selectElement = document.getElementById('weekSelect');
+            const selectedWeek = selectElement.value;
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('week', selectedWeek);
+            window.location.href = currentUrl.toString();
+        }
+    </script>
 </body>
 </html>

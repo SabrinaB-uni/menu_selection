@@ -29,7 +29,20 @@
             {% endif %}
         {% endwith %}
 
-              <!-- Week info section -->
+        <!-- Week Selector -->
+        <div class="week-selector">
+            <label for="weekSelect">Select Week:</label>
+            <select id="weekSelect" onchange="changeWeek()">
+                {% for week in available_weeks %}
+                <option value="{{ week.start_date }}"
+                        {% if week.start_date == selected_week %}selected{% endif %}>
+                    Week {{ week.week_number }} ({{ week.start_date }} to {{ week.end_date }}) - Cycle {{ week.cycle_number }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Week info section -->
         <div class="week-info">
             <span class="week-dates">{{ week_dates[0].display_date }} - {{ week_dates[-1].display_date }}</span>
             <span class="week-number">Week {{ week_number }} - Cycle {{ week_cycle }}</span>
@@ -42,7 +55,8 @@
                         <th class="student-column">Student Name</th>
                         {% for day in week_dates %}
                         <th class="day-column">
-                            {{ day.day_name }}
+                            {{ day.day_name }}<br>
+                            <span class="day-date">{{ day.display_date }}</span>
                         </th>
                         {% endfor %}
                     </tr>
@@ -50,7 +64,7 @@
                 <tbody>
                     {% for student in students %}
                     <tr>
-                        <td class="student-name">{{ student.name }}</td>
+                        <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
                         {% for day in week_dates %}
                         <td class="menu-cell">
                             {% set choice_id = student_choices.get(student.id, {}).get('choices', {}).get(day.date) %}
@@ -75,7 +89,7 @@
             </table>
         </div>
 
-        <p class="auto-save-note">Changes are saved automatically</p>
+        <p class="auto-save-note">✓ Changes are saved automatically</p>
     </div>
 
     <script>
@@ -121,14 +135,23 @@
                 if (data.success) {
                     showSaveStatus('✓ Saved', 'success');
                 } else {
-                    showSaveStatus('Failed to save', 'error');
+                    showSaveStatus('❌ Failed to save', 'error');
                 }
             } catch (error) {
                 console.error('Save error:', error);
-                showSaveStatus('Error', 'error');
+                showSaveStatus('❌ Error', 'error');
             }
         }
 
+        function changeWeek() {
+            const selectElement = document.getElementById('weekSelect');
+            const selectedWeek = selectElement.value;
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('week', selectedWeek);
+            window.location.href = currentUrl.toString();
+        }
+
+        // Auto-save on change
         document.querySelectorAll('.menu-select').forEach(select => {
             select.addEventListener('change', function() {
                 if (saveTimeout) {
