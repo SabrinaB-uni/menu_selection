@@ -31,9 +31,9 @@ def init_db():
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         item_name    TEXT NOT NULL UNIQUE,
         mon          INTEGER DEFAULT 1,
-        tue         INTEGER DEFAULT 1,
+        tue          INTEGER DEFAULT 1,
         wed          INTEGER DEFAULT 1,
-        thu         INTEGER DEFAULT 1,
+        thu          INTEGER DEFAULT 1,
         fri          INTEGER DEFAULT 1,
         week_cycle1  INTEGER DEFAULT 1,
         week_cycle2  INTEGER DEFAULT 1,
@@ -120,6 +120,9 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
         year = date.year
         day_of_week = date.weekday()  # 0=Monday, 4=Friday
 
+        print(f"DEBUG: Saving choice - Student: {student_id}, MenuItem: {menu_item_id}, Date: {date_str}")
+        print(f"DEBUG: Week: {week_number}, Year: {year}, Day: {day_of_week}")
+
         with get_db_connection() as conn:
             # Delete existing choice for this student/week/day
             conn.execute("""
@@ -134,13 +137,15 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
                     (student_id, menu_item_id, class_id, week_id, year, day_of_week, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 """, (student_id, menu_item_id, class_id, week_number, year, day_of_week))
+                print(f"DEBUG: Choice saved successfully!")
 
             conn.commit()
             return True
     except Exception as e:
         print(f"Database error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
-
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all choices for a class for a specific week"""
@@ -216,6 +221,8 @@ def get_daily_breakdown_by_class(start_date):
     week_number = datetime.strptime(start_date, '%Y-%m-%d').isocalendar()[1]
     year = datetime.strptime(start_date, '%Y-%m-%d').year
 
+    print(f"DEBUG: Getting breakdown for week {week_number}, year {year}")
+
     with get_db_connection() as conn:
         # Get all classes
         classes = conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
@@ -240,14 +247,21 @@ def get_daily_breakdown_by_class(start_date):
             ORDER BY ch.day_of_week, cl.name, m.item_name
         """, (week_number, year)).fetchall()
 
+        print(f"DEBUG: Found {len(results)} choice records")
+        for row in results:
+            print(f"  Day {row['day_of_week']}: {row['class_name']} - {row['menu_item']} = {row['quantity']}")
+
         # Organize by day
         daily_data = {}
         start_dt = datetime.strptime(start_date, '%Y-%m-%d')
 
         # Initialize all weekdays
         for i in range(5):  # Monday to Friday
-            date = (start_dt + timedelta(days=i)).strftime('%Y-%m-%d')
-            day_name = (start_dt + timedelta(days=i)).strftime('%A')
+            date_obj = start_dt + timedelta(days=i)
+            date = date_obj.strftime('%Y-%m-%d')
+            # Format: "Monday 10 Nov 2025"
+            day_name = date_obj.strftime('%A %d %b %Y')
+
             daily_data[date] = {
                 'day_name': day_name,
                 'day_of_week': i,
@@ -313,11 +327,15 @@ def get_available_weeks():
             target_monday = week_1_monday + timedelta(weeks=week['week_number'] - 1)
             friday = target_monday + timedelta(days=4)
 
+            # Format: "17 Nov to 21 Nov 2025 - Week Cycle 2"
+            display_text = f"{target_monday.strftime('%d %b')} to {friday.strftime('%d %b %Y')} - Week Cycle {week['cycle_number']}"
+
             formatted_weeks.append({
                 'start_date': target_monday.strftime('%Y-%m-%d'),
                 'end_date': friday.strftime('%Y-%m-%d'),
                 'week_number': week['week_number'],
-                'cycle_number': week['cycle_number']
+                'cycle_number': week['cycle_number'],
+                'display_text': display_text
             })
 
         return formatted_weeks
@@ -348,14 +366,12 @@ def ensure_week_cycles_exist():
 
         conn.commit()
 
-
 def get_current_week_monday():
     """Get the Monday of the current week"""
     today = datetime.now().date()
     days_since_monday = today.weekday()
     current_monday = today - timedelta(days=days_since_monday)
     return current_monday.strftime('%Y-%m-%d')
-
 
 def get_next_week_monday():
     """Get the Monday of the NEXT week"""
@@ -364,7 +380,6 @@ def get_next_week_monday():
     this_monday = today - timedelta(days=days_since_monday)
     next_monday = this_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
-
 
 def get_week_cycle(date_str):
     """Get week cycle from database or calculate it"""
@@ -386,12 +401,10 @@ def get_week_cycle(date_str):
             cycle = ((week_number - 1) % 3) + 1
             return cycle
 
-
 # Routes
 @app.route('/')
 def index():
     return render_template('index.html', classes=get_classes())
-
 
 @app.route('/teacher_menu/<int:class_id>')
 def teacher_menu(class_id):
