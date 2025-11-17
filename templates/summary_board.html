@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - School Lunch Choice System</title>
+    <title>Summary Dashboard - School Lunch Choice System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .week-selector {
@@ -145,17 +145,16 @@
             </select>
         </div>
 
-        <!-- Week info section -->
-        <div class="week-info">
-            <span class="week-dates">{{ start_date }} - {{ end_date }}</span>
-            <span class="week-number">Week {{ week_number }} - Cycle {{ week_cycle }}</span>
-        </div>
+<div class="week-info">
+    <span class="week-cycle">Week Cycle {{ week_cycle }}</span>
+    <span class="week-number">Week {{ week_number }}</span>
+</div>
 
         <!-- Daily Summary Tables -->
         <div class="daily-summaries">
             {% for date, day_data in daily_breakdown.items() %}
             <div class="daily-summary">
-                <h3>{{ day_data.day_name }} - {{ date }}</h3>
+                <h3>{{ day_data.day_name }}</h3>
                 {% if day_data.menu_items and day_data.classes %}
                 <table class="matrix-table">
                     <thead>

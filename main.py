@@ -8,14 +8,12 @@ DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'my-cafeteria-app-secret-key-2024'
 
-
 # Database helpers
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 
 def init_db():
     """Create all tables the very first time you run the app."""
@@ -75,16 +73,13 @@ def init_db():
     with get_db_connection() as conn:
         conn.executescript(sql)
 
-
 def get_classes():
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
-
 def get_menu_items():
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
-
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -101,7 +96,6 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
-
 def get_students_by_class(class_id):
     """Get students sorted by last name"""
     with get_db_connection() as conn:
@@ -110,7 +104,6 @@ def get_students_by_class(class_id):
             (class_id,)
         ).fetchall()
         return students
-
 
 def save_choice(student_id, menu_item_id, class_id, date_str):
     try:
@@ -178,7 +171,6 @@ def get_week_choices_by_class(class_id, week_number, year):
 
         return student_choices
 
-
 def get_week_summary(start_date):
     """Get summary of all choices for a week grouped by menu item"""
     week_number = datetime.strptime(start_date, '%Y-%m-%d').isocalendar()[1]
@@ -195,7 +187,6 @@ def get_week_summary(start_date):
             GROUP BY m.item_name, c.day_of_week
             ORDER BY c.day_of_week, m.item_name
         """, (week_number, year)).fetchall()
-
 
 def get_week_summary_totals(start_date):
     """Get total quantities needed for each menu item for the week"""
@@ -214,7 +205,6 @@ def get_week_summary_totals(start_date):
         """, (week_number, year)).fetchall()
 
         return results
-
 
 def get_daily_breakdown_by_class(start_date):
     """Get choices broken down by day, class, and menu item"""
@@ -271,7 +261,6 @@ def get_daily_breakdown_by_class(start_date):
                 'class_totals': {},  # class_id -> total
                 'item_totals': {}  # menu_item_id -> total
             }
-
             # Initialize data structure
             for cls in classes:
                 daily_data[date]['data'][cls['id']] = {}
@@ -298,7 +287,6 @@ def get_daily_breakdown_by_class(start_date):
                 daily_data[date]['item_totals'][menu_item_id] += quantity
 
         return daily_data
-
 
 def get_available_weeks():
     """Get all available weeks for dropdown selection"""
@@ -339,7 +327,6 @@ def get_available_weeks():
             })
 
         return formatted_weeks
-
 
 def ensure_week_cycles_exist():
     """Ensure week cycles exist for current and next few weeks"""
@@ -400,7 +387,6 @@ def get_week_cycle(date_str):
             # Calculate if not in database
             cycle = ((week_number - 1) % 3) + 1
             return cycle
-
 # Routes
 @app.route('/')
 def index():
@@ -456,7 +442,6 @@ def teacher_menu(class_id):
         selected_week=selected_week
     )
 
-
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
     try:
@@ -475,7 +460,6 @@ def auto_save():
     except Exception as e:
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @app.route('/admin')
 def admin_board():
@@ -512,7 +496,6 @@ def admin_board():
         available_weeks=available_weeks,
         selected_week=selected_week
     )
-
 
 if __name__ == '__main__':
     # Verify database exists and print path
