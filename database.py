@@ -178,8 +178,8 @@ def auto_save():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@app.route('/admin')
-def admin_board():
+@app.route('/summary')
+def summary_board():
     selected_week = request.args.get('week', get_monday(0))  # Current week
     week_dates, week_number, week_cycle = get_week_dates(selected_week)
 
@@ -197,7 +197,7 @@ def admin_board():
         """, (selected_week, end_date)).fetchall()
 
     return render_template(
-        'admin_board.html',
+        'summary_board.html',
         summary=summary,
         week_dates=week_dates,
         week_number=week_number,
