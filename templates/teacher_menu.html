@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ class_info.name }} - Lunch Selection</title>
+    <title>{{ class_info.name }} - Menu Selection</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>{{ class_info.name }}</h1>
-            <h2>Weekly Lunch Selection</h2>
+            <h2>Weekly Lunch Menu Selection</h2>
             <div class="header-nav">
-                <a href="{{ url_for('index') }}" class="nav-btn">← Home</a>
-                <a href="{{ url_for('summary_board') }}" class="nav-btn">Summary</a>
+                <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
+                <a href="{{ url_for('summary_board', week=selected_week) }}" class="nav-btn">Summary</a>
             </div>
         </div>
-
-        <div id="save-status" class="save-status"></div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -29,10 +27,28 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Week Selector -->
+        <!-- WEEK NAVIGATION BUTTONS -->
+        <div class="week-navigation">
+            <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=previous_week) }}"
+               class="week-nav-btn week-nav-prev">
+                <span class="arrow">←</span> Previous Week
+            </a>
+
+            <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=current_week) }}"
+               class="week-nav-btn week-nav-current {% if selected_week == current_week %}active{% endif %}">
+                This Week
+            </a>
+
+            <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=next_week) }}"
+               class="week-nav-btn week-nav-next">
+                Next Week <span class="arrow">→</span>
+            </a>
+        </div>
+
+        <!-- WEEK DROPDOWN (for quick jump) -->
         <div class="week-selector">
-            <label for="weekSelect">Select Week:</label>
-            <select id="weekSelect" onchange="changeWeek()">
+            <label for="week-select">Quick Jump to Week:</label>
+            <select id="week-select" onchange="location.href='{{ url_for('teacher_menu', class_id=class_info.id) }}?week=' + this.value">
                 {% for week in available_weeks %}
                 <option value="{{ week.start_date }}"
                         {% if week.start_date == selected_week %}selected{% endif %}>
@@ -42,20 +58,22 @@
             </select>
         </div>
 
-        <!-- Week Info -->
+        <!-- WEEK INFO DISPLAY -->
         <div class="week-info {% if is_editable %}editable{% else %}read-only{% endif %}">
-            <span class="week-cycle">Week Cycle {{ week_cycle }}</span>
-            <span class="week-number">Week {{ week_number }}</span>
+            <div class="week-cycle">Week Cycle {{ week_cycle }}</div>
+            <div class="week-number">Week {{ week_number }}</div>
+            <div class="week-date-range">
+                {{ week_dates[0].display_date }} - {{ week_dates[4].display_date }}
+            </div>
         </div>
 
-        <!-- Read-Only Warning -->
         {% if not is_editable %}
         <div class="week-warning">
-             <strong>Read-Only Mode:</strong> This week has started. No changes can be made.
+            <strong> Read-Only Mode:</strong> This week has already started. Changes are not permitted.
         </div>
         {% endif %}
 
-        <!-- Lunch Selection Table -->
+        <!-- LUNCH SELECTION TABLE -->
         <div class="lunch-table-container">
             <table class="lunch-table">
                 <thead>
@@ -69,40 +87,41 @@
                         {% endfor %}
                     </tr>
                 </thead>
-                <tbody>
+                                <tbody>
                     {% for student in students %}
                     <tr>
-                        <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
+                        <td class="student-name">{{ student.last_name }}, {{ student.first_name }}</td>
                         {% for day in week_dates %}
                         <td class="menu-cell">
-                            {% set choice_id = student_choices.get(student.id, {}).get('choices', {}).get(day.day_index) %}
-
                             {% if is_editable %}
-                                <!-- EDITABLE: Future Week -->
-                                <select
-                                    class="menu-select"
-                                    data-student-id="{{ student.id }}"
-                                    data-date="{{ day.date }}"
-                                    data-class-id="{{ class_info.id }}">
-                                    <option value="">-</option>
-                                    {% for item in day.menu_items %}
-                                        <option value="{{ item.id }}"
-                                            {% if choice_id == item.id %}selected{% endif %}>
-                                            {{ item.item_name }}
-                                        </option>
+                                <select class="menu-select"
+                                        data-student-id="{{ student.id }}"
+                                        data-date="{{ day.date }}"
+                                        data-class-id="{{ class_info.id }}">
+                                    <option value="">-- No selection --</option>
+                                   {% for item in day.menu_items %}
+                                     <option value="{{ item.id }}"
+                                            {% if student.id in student_choices and
+                                               day.day_index in student_choices[student.id].choices and
+                                               student_choices[student.id].choices[day.day_index] == item.id %}
+                                            selected
+                                            {% endif %}>
+                                        {{ item.item_name }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             {% else %}
-                                <!-- READ-ONLY: Current/Past Week -->
                                 <div class="menu-readonly">
-                                    {% if choice_id %}
+                                    {% set has_choice = student.id in student_choices and day.day_index in student_choices[student.id].choices %}
+                                    {% if has_choice %}
+                                        {% set selected_item_id = student_choices[student.id].choices[day.day_index] %}
                                         {% for item in day.menu_items %}
-                                            {% if item.id == choice_id %}
+                                            {% if item.id == selected_item_id %}
                                                 <span class="readonly-choice">{{ item.item_name }}</span>
                                             {% endif %}
                                         {% endfor %}
                                     {% else %}
-                                        <span class="no-choice">No choice made</span>
+                                        <span class="no-choice">No selection</span>
                                     {% endif %}
                                 </div>
                             {% endif %}
@@ -114,91 +133,64 @@
             </table>
         </div>
 
+        </div>
+
+        <div id="save-status" class="save-status"></div>
     </div>
 
     <script>
-        let saveTimeout = null;
-        const saveStatus = document.getElementById('save-status');
-        const isEditable = {{ 'true' if is_editable else 'false' }};
+        // Auto-save functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const selects = document.querySelectorAll('.menu-select');
+            const statusDiv = document.getElementById('save-status');
 
-        function showSaveStatus(message, type) {
-            saveStatus.textContent = message;
-            saveStatus.className = `save-status ${type}`;
-            saveStatus.style.display = 'block';
-
-            if (type === 'success') {
-                setTimeout(() => {
-                    saveStatus.style.display = 'none';
-                }, 1500);
-            } else if (type === 'error') {
-                setTimeout(() => {
-                    saveStatus.style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        async function saveChoice(select) {
-            if (!isEditable) {
-                showSaveStatus('🔒 Cannot edit - week has started', 'error');
-                return;
-            }
-
-            const studentId = select.dataset.studentId;
-            const date = select.dataset.date;
-            const classId = select.dataset.classId;
-            const menuItemId = select.value;
-
-            showSaveStatus('Saving...', 'saving');
-
-            try {
-                const response = await fetch('/auto_save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        student_id: studentId,
-                        date: date,
-                        class_id: classId,
-                        menu_item_id: menuItemId
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showSaveStatus('✓ Saved', 'success');
-                } else {
-                    showSaveStatus('❌ ' + data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Save error:', error);
-                showSaveStatus('❌ Error saving', 'error');
-            }
-        }
-
-        function changeWeek() {
-            const selectElement = document.getElementById('weekSelect');
-            const selectedWeek = selectElement.value;
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('week', selectedWeek);
-            window.location.href = currentUrl.toString();
-        }
-
-        // Only attach save listeners if week is editable
-        if (isEditable) {
-            document.querySelectorAll('.menu-select').forEach(select => {
+            selects.forEach(select => {
                 select.addEventListener('change', function() {
-                    if (saveTimeout) {
-                        clearTimeout(saveTimeout);
-                    }
+                    const studentId = this.dataset.studentId;
+                    const date = this.dataset.date;
+                    const classId = this.dataset.classId;
+                    const menuItemId = this.value;
 
-                    saveTimeout = setTimeout(() => {
-                        saveChoice(this);
-                    }, 300);
+                    // Show saving status
+                    statusDiv.textContent = '💾 Saving...';
+                    statusDiv.className = 'save-status saving';
+                    statusDiv.style.display = 'block';
+
+                    fetch('/auto_save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            student_id: studentId,
+                            date: date,
+                            class_id: classId,
+                            menu_item_id: menuItemId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            statusDiv.textContent = '✅ Saved!';
+                            statusDiv.className = 'save-status success';
+                        } else {
+                            statusDiv.textContent = '❌ ' + data.message;
+                            statusDiv.className = 'save-status error';
+                        }
+                        setTimeout(() => {
+                            statusDiv.style.display = 'none';
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        statusDiv.textContent = '❌ Error saving';
+                        statusDiv.className = 'save-status error';
+                        setTimeout(() => {
+                            statusDiv.style.display = 'none';
+                        }, 3000);
+                    });
                 });
             });
-        }
+        });
     </script>
 </body>
 </html>

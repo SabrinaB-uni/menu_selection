@@ -3,206 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summary Dashboard - School Lunch Choice System</title>
+    <title>Summary Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .week-selector {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .week-selector label {
-            font-weight: bold;
-            margin-right: 10px;
-            font-size: 16px;
-        }
-                .week-selector select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            min-width: 400px;
-        }
-
-        .daily-summaries {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            margin: 30px 0;
-        }
-
-        .daily-summary {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            background-color: #f9f9f9;
-            overflow-x: auto;
-            width: 100%;
-        }
-
-        .daily-summary h3 {
-            margin: 0 0 15px 0;
-            color: #333;
-            border-bottom: 2px solid #28a745;
-            padding-bottom: 8px;
-            font-size: 1.2em;
-            text-align: center;
-        }
-
-        .matrix-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-            min-width: 400px;
-        }
-
-        .matrix-table th,
-        .matrix-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .matrix-table th {
-            background-color: #f8f9fa;
-            color: #333;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-
-        .matrix-table .class-name {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            text-align: left;
-            padding-left: 15px;
-        }
-
-        .matrix-table .total-row {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            border-bottom: 3px solid #28a745;
-        }
-
-        .matrix-table .total-col {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            border-right: 3px solid #28a745;
-        }
-
-        .matrix-table .grand-total {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            border-bottom: 3px solid #28a745;
-            border-right: 3px solid #28a745;
-        }
-
-        .no-selections {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-            padding: 30px;
-            font-size: 1.1em;
-        }
-
-        @media print {
-            .week-selector, .header-nav {
-                display: none;
-            }
-            .daily-summary {
-                page-break-inside: avoid;
-                margin-bottom: 20px;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-
         <div class="header">
-            <h1>Summary Dashboard</h1>
-            <h2>Weekly lunch order summary</h2>
+            <h1>Lunch Selection Summary</h1>
+            <h2>Weekly Overview by Class and Menu Item</h2>
             <div class="header-nav">
-                <a href="{{ url_for('index') }}" class="nav-btn">← Home</a>
+                <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
             </div>
         </div>
 
-        <!-- Week Selector -->
+        <!-- WEEK NAVIGATION BUTTONS -->
+        <div class="week-navigation">
+            <a href="{{ url_for('summary_board', week=previous_week) }}"
+               class="week-nav-btn week-nav-prev">
+                <span class="arrow">←</span> Previous Week
+            </a>
+
+            <a href="{{ url_for('summary_board', week=current_week) }}"
+               class="week-nav-btn week-nav-current {% if selected_week == current_week %}active{% endif %}">
+                This Week
+            </a>
+
+            <a href="{{ url_for('summary_board', week=next_week) }}"
+               class="week-nav-btn week-nav-next">
+                Next Week <span class="arrow">→</span>
+            </a>
+        </div>
+
+        <!-- WEEK DROPDOWN (for quick jump) -->
         <div class="week-selector">
-            <label for="weekSelect">Select Week:</label>
-            <select id="weekSelect" onchange="changeWeek()">
-                {% if available_weeks %}
-                    {% for week in available_weeks %}
-                    <option value="{{ week.start_date }}"
-                            {% if week.start_date == selected_week %}selected{% endif %}>
-                        Week {{ week.week_number }} ({{ week.start_date }} to {{ week.end_date }}) - Cycle {{ week.cycle_number }}
-                    </option>
-                    {% endfor %}
-                {% else %}
-                    <option value="{{ selected_week }}">Current Week</option>
-                {% endif %}
+            <label for="week-select">Quick Jump to Week:</label>
+            <select id="week-select" onchange="location.href='{{ url_for('summary_board') }}?week=' + this.value">
+                {% for week in available_weeks %}
+                <option value="{{ week.start_date }}"
+                        {% if week.start_date == selected_week %}selected{% endif %}>
+                    {{ week.display_text }}
+                </option>
+                {% endfor %}
             </select>
         </div>
 
-<div class="week-info">
-    <span class="week-cycle">Week Cycle {{ week_cycle }}</span>
-    <span class="week-number">Week {{ week_number }}</span>
-</div>
+        <!-- WEEK INFO DISPLAY -->
+        <div class="week-info">
+            <div class="week-cycle">Week Cycle {{ week_cycle }}</div>
+            <div class="week-number">Week {{ week_number }}</div>
+            <div class="week-date-range">
+                {{ start_date }} - {{ end_date }}
+            </div>
+        </div>
 
-        <!-- Daily Summary Tables -->
+        <!-- DAILY SUMMARIES -->
         <div class="daily-summaries">
-            {% for date, day_data in daily_breakdown.items() %}
+            {% for date, data in daily_breakdown.items()|sort %}
             <div class="daily-summary">
-                <h3>{{ day_data.day_name }}</h3>
-                {% if day_data.menu_items and day_data.classes %}
+                <h3>{{ data.day_name }}</h3>
+
+                {% if data.item_totals.values()|sum > 0 %}
                 <table class="matrix-table">
                     <thead>
                         <tr>
-                            <th>Class</th>
-                            {% for item in day_data.menu_items %}
+                            <th>Class / Menu Item</th>
+                            {% for item in data.menu_items %}
                             <th>{{ item.name }}</th>
                             {% endfor %}
-                            <th class="total-col">Class Total</th>
+                            <th class="total-col">Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for class_info in day_data.classes %}
+                        {% for class in data.classes %}
                         <tr>
-                            <td class="class-name">{{ class_info.name }}</td>
-                            {% for item in day_data.menu_items %}
-                            <td>{{ day_data.data[class_info.id][item.id] }}</td>
+                            <td class="class-name">{{ class.name }}</td>
+                            {% for item in data.menu_items %}
+                            <td>{{ data.data[class.id][item.id] or '-' }}</td>
                             {% endfor %}
-                            <td class="total-col">{{ day_data.class_totals[class_info.id] }}</td>
+                            <td class="total-col">{{ data.class_totals[class.id] or '-' }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="total-row">
-                            <td><strong>Item Total</strong></td>
-                            {% for item in day_data.menu_items %}
-                            <td><strong>{{ day_data.item_totals[item.id] }}</strong></td>
+                            <td class="class-name">TOTAL</td>
+                            {% for item in data.menu_items %}
+                            <td>{{ data.item_totals[item.id] or '-' }}</td>
                             {% endfor %}
-                            <td class="grand-total">
-                                <strong>{{ day_data.class_totals.values()|sum }}</strong>
-                            </td>
+                            <td class="grand-total">{{ data.item_totals.values()|sum }}</td>
                         </tr>
                     </tbody>
                 </table>
                 {% else %}
-                <div class="no-selections">No selections for this day</div>
+                <div class="no-selections">
+                    No meal selections have been made for this day yet.
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
-
-    <script>
-        function changeWeek() {
-            const selectElement = document.getElementById('weekSelect');
-            const selectedWeek = selectElement.value;
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('week', selectedWeek);
-            window.location.href = currentUrl.toString();
-        }
-    </script>
 </body>
 </html>

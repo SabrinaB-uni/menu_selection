@@ -139,29 +139,92 @@ body {
     color: #333;
 }
 
+/* ==================== WEEK NAVIGATION BUTTONS ==================== */
+.week-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 25px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    border: 2px solid #dee2e6;
+}
+
+.week-nav-btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95em;
+    border: 2px solid transparent;
+}
+
+.week-nav-prev,
+.week-nav-next {
+    background-color: #6c757d;
+    color: white !important;
+}
+
+.week-nav-prev:hover,
+.week-nav-next:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.week-nav-current {
+    background-color: #6b8e65;
+    color: white !important;
+    font-size: 1.05em;
+    padding: 14px 28px;
+}
+
+.week-nav-current:hover {
+    background-color: #5a7a55;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 142, 101, 0.3);
+}
+
+.week-nav-current.active {
+    background-color: #34495e;
+    border-color: #2c3e50;
+    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.2);
+}
+
+.week-nav-btn .arrow {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
 /* ==================== WEEK SELECTOR ==================== */
 .week-selector {
-    margin: 20px 0;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
+    margin: 15px 0;
+    padding: 12px;
+    background-color: #fff;
+    border-radius: 6px;
     text-align: center;
     border: 1px solid #dee2e6;
 }
 
 .week-selector label {
-    font-weight: bold;
+    font-weight: 600;
     margin-right: 10px;
-    font-size: 16px;
-    color: #495057;
+    font-size: 0.9em;
+    color: #6c757d;
 }
 
 .week-selector select {
-    padding: 10px 15px;
+    padding: 8px 12px;
     border: 2px solid #ced4da;
     border-radius: 6px;
-    font-size: 14px;
-    min-width: 400px;
+    font-size: 0.85em;
+    min-width: 350px;
     cursor: pointer;
     background-color: white;
     transition: all 0.3s ease;
@@ -209,6 +272,16 @@ body {
     background-color: #e9ecef;
     border-radius: 20px;
     border: 2px solid #ced4da;
+}
+
+.week-date-range {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #495057;
+    padding: 8px 16px;
+    background-color: #fff;
+    border-radius: 20px;
+    border: 2px solid #dee2e6;
 }
 
 /* Week Info Status States */
@@ -551,6 +624,7 @@ a.class-card .arrow {
     }
 
     .week-selector,
+    .week-navigation,
     .header-nav,
     .save-status,
     .auto-save-note {
@@ -614,6 +688,17 @@ a.class-card .arrow {
         font-size: 0.9em;
     }
 
+    .week-navigation {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .week-nav-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+    }
+
     .week-selector select {
         min-width: 100%;
         font-size: 12px;
@@ -648,7 +733,8 @@ a.class-card .arrow {
     }
 
     .week-cycle,
-    .week-number {
+    .week-number,
+    .week-date-range {
         font-size: 0.9em;
         padding: 8px 15px;
     }

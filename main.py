@@ -8,16 +8,13 @@ DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'my-cafeteria-app-secret-key-2024'
 
-
 # ==================== DATABASE HELPERS ====================
-
 def get_db_connection():
     """Get database connection with Row factory enabled"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 
 def init_db():
     """Create all tables on first run"""
@@ -77,20 +74,16 @@ def init_db():
     with get_db_connection() as conn:
         conn.executescript(sql)
 
-
 # ==================== DATA RETRIEVAL ====================
-
 def get_classes():
     """Get all classes sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
-
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
-
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -106,7 +99,6 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
-
 def get_students_by_class(class_id):
     """Get students for a class, sorted by last name"""
     with get_db_connection() as conn:
@@ -114,7 +106,6 @@ def get_students_by_class(class_id):
             'SELECT * FROM Student WHERE class_id = ? ORDER BY last_name, first_name',
             (class_id,)
         ).fetchall()
-
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all student choices for a specific class and week"""
@@ -147,7 +138,6 @@ def get_week_choices_by_class(class_id, week_number, year):
                 student_choices[student_id]['choices'][choice['day_of_week']] = choice['menu_item_id']
 
         return student_choices
-
 
 def get_daily_breakdown_by_class(start_date):
     """Get complete breakdown of choices by day, class, and menu item"""
@@ -220,9 +210,7 @@ def get_daily_breakdown_by_class(start_date):
 
         return daily_data
 
-
 # ==================== SAVE OPERATIONS ====================
-
 def save_choice(student_id, menu_item_id, class_id, date_str):
     """Save or update a student's lunch choice"""
     try:
@@ -252,9 +240,7 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
         print(f"Database error: {e}")
         return False
 
-
 # ==================== WEEK CYCLE MANAGEMENT ====================
-
 def get_available_weeks():
     """Get all available weeks for dropdown selection"""
     with get_db_connection() as conn:
@@ -285,7 +271,6 @@ def get_available_weeks():
 
         return formatted_weeks
 
-
 def ensure_week_cycles_exist():
     """Auto-generate week cycles for past 4 and future 8 weeks"""
     with get_db_connection() as conn:
@@ -308,14 +293,12 @@ def ensure_week_cycles_exist():
 
         conn.commit()
 
-
 def get_current_week_monday():
     """Get Monday of current week"""
     today = datetime.now().date()
     days_since_monday = today.weekday()
     current_monday = today - timedelta(days=days_since_monday)
     return current_monday.strftime('%Y-%m-%d')
-
 
 def get_next_week_monday():
     """Get Monday of next week"""
@@ -324,7 +307,6 @@ def get_next_week_monday():
     this_monday = today - timedelta(days=days_since_monday)
     next_monday = this_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
-
 
 def get_week_cycle(date_str):
     """Get week cycle number for a specific date"""
@@ -345,7 +327,6 @@ def get_week_cycle(date_str):
             # Fallback calculation
             return ((week_number - 1) % 3) + 1
 
-
 def is_week_editable(selected_week_str):
     """
     Check if a week is editable.
@@ -362,14 +343,23 @@ def is_week_editable(selected_week_str):
     # Only allow editing for weeks that haven't started yet
     return selected_monday > current_monday
 
+def get_previous_week_monday(current_week_str):
+    """Get Monday of the previous week"""
+    current_monday = datetime.strptime(current_week_str, '%Y-%m-%d')
+    previous_monday = current_monday - timedelta(days=7)
+    return previous_monday.strftime('%Y-%m-%d')
+
+def get_next_week_monday_from_date(current_week_str):
+    """Get Monday of the next week from a given date"""
+    current_monday = datetime.strptime(current_week_str, '%Y-%m-%d')
+    next_monday = current_monday + timedelta(days=7)
+    return next_monday.strftime('%Y-%m-%d')
 
 # ==================== ROUTES ====================
-
 @app.route('/')
 def index():
     """Home page with class selection"""
     return render_template('index.html', classes=get_classes())
-
 
 @app.route('/teacher_menu/<int:class_id>')
 def teacher_menu(class_id):
@@ -407,7 +397,17 @@ def teacher_menu(class_id):
     available_weeks = get_available_weeks()
 
     # Check if week is editable (future weeks only)
+    # Check if week is editable (future weeks only)
     is_editable = is_week_editable(selected_week)
+
+    # Calculate navigation weeks
+    previous_week = get_previous_week_monday(selected_week)
+    next_week = get_next_week_monday_from_date(selected_week)
+    current_week = get_next_week_monday()  # This is the actual current week
+
+    # Determine if viewing current week or future week
+    is_current_week = (selected_week == current_week)
+    is_future_week = is_editable and not is_current_week
 
     return render_template(
         'teacher_menu.html',
@@ -419,9 +419,13 @@ def teacher_menu(class_id):
         week_cycle=week_cycle,
         available_weeks=available_weeks,
         selected_week=selected_week,
-        is_editable=is_editable
+        is_editable=is_editable,
+        is_current_week=is_current_week,
+        is_future_week=is_future_week,
+        previous_week=previous_week,
+        next_week=next_week,
+        current_week=current_week
     )
-
 
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
@@ -462,7 +466,6 @@ def auto_save():
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
 @app.route('/summary')
 def summary_board():
     """summary dashboard showing all choices for the week"""
@@ -484,6 +487,11 @@ def summary_board():
     daily_breakdown = get_daily_breakdown_by_class(selected_week)
     available_weeks = get_available_weeks()
 
+    # Calculate navigation weeks
+    previous_week = get_previous_week_monday(selected_week)
+    next_week = get_next_week_monday_from_date(selected_week)
+    current_week = get_current_week_monday()
+
     return render_template(
         'summary_board.html',
         daily_breakdown=daily_breakdown,
@@ -493,12 +501,13 @@ def summary_board():
         start_date=week_dates[0]['display_date'],
         end_date=week_dates[4]['display_date'],
         available_weeks=available_weeks,
-        selected_week=selected_week
+        selected_week=selected_week,
+        previous_week=previous_week,
+        next_week=next_week,
+        current_week=current_week
     )
 
-
 # ==================== APPLICATION STARTUP ====================
-
 if __name__ == '__main__':
     print(f"Using database at: {os.path.abspath(DB_PATH)}")
 
@@ -509,11 +518,8 @@ if __name__ == '__main__':
     else:
         print("Database found successfully!")
 
-    print("\n" + "=" * 60)
-    print("🍽️  School Lunch Choice System")
-    print("=" * 60)
+    print(" School Lunch Choice System")
     print(f"Access via: http://support-sab:5000/")
     print(f"Or via:     http://localhost:5000/")
-    print("=" * 60 + "\n")
 
     app.run(host="0.0.0.0", port=5000, debug=True)
