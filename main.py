@@ -209,7 +209,6 @@ def get_daily_breakdown_by_class(start_date):
                 daily_data[date]['item_totals'][menu_item_id] += quantity
 
         return daily_data
-
 # ==================== SAVE OPERATIONS ====================
 def save_choice(student_id, menu_item_id, class_id, date_str):
     """Save or update a student's lunch choice"""
@@ -397,7 +396,6 @@ def teacher_menu(class_id):
     available_weeks = get_available_weeks()
 
     # Check if week is editable (future weeks only)
-    # Check if week is editable (future weeks only)
     is_editable = is_week_editable(selected_week)
 
     # Calculate navigation weeks
@@ -492,6 +490,10 @@ def summary_board():
     next_week = get_next_week_monday_from_date(selected_week)
     current_week = get_current_week_monday()
 
+    # Determine week type
+    is_current_week = (selected_week == current_week)
+    is_future_week = (selected_week > current_week)
+
     return render_template(
         'summary_board.html',
         daily_breakdown=daily_breakdown,
@@ -504,7 +506,9 @@ def summary_board():
         selected_week=selected_week,
         previous_week=previous_week,
         next_week=next_week,
-        current_week=current_week
+        current_week=current_week,
+        is_current_week=is_current_week,
+        is_future_week=is_future_week
     )
 
 # ==================== APPLICATION STARTUP ====================

@@ -58,8 +58,8 @@
             </select>
         </div>
 
-        <!-- WEEK INFO DISPLAY -->
-        <div class="week-info {% if is_editable %}editable{% else %}read-only{% endif %}">
+                <!-- WEEK INFO DISPLAY -->
+        <div class="week-info {% if is_future_week %}future{% elif is_current_week %}current{% else %}read-only{% endif %}">
             <div class="week-cycle">Week Cycle {{ week_cycle }}</div>
             <div class="week-number">Week {{ week_number }}</div>
             <div class="week-date-range">
@@ -152,7 +152,7 @@
                     const menuItemId = this.value;
 
                     // Show saving status
-                    statusDiv.textContent = '💾 Saving...';
+                    statusDiv.textContent = 'Saving...';
                     statusDiv.className = 'save-status saving';
                     statusDiv.style.display = 'block';
 
@@ -171,10 +171,10 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            statusDiv.textContent = '✅ Saved!';
+                            statusDiv.textContent = 'Saved!';
                             statusDiv.className = 'save-status success';
                         } else {
-                            statusDiv.textContent = '❌ ' + data.message;
+                            statusDiv.textContent = data.message;
                             statusDiv.className = 'save-status error';
                         }
                         setTimeout(() => {
@@ -182,7 +182,7 @@
                         }, 2000);
                     })
                     .catch(error => {
-                        statusDiv.textContent = '❌ Error saving';
+                        statusDiv.textContent = 'Error saving';
                         statusDiv.className = 'save-status error';
                         setTimeout(() => {
                             statusDiv.style.display = 'none';
