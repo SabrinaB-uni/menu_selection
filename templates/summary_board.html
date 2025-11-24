@@ -8,11 +8,14 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+                <div class="header">
             <h1>Lunch Selection Summary</h1>
             <h2>Weekly Overview by Class and Menu Item</h2>
             <div class="header-nav">
                 <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
+                <a href="{{ url_for('export_summary_excel', week=selected_week) }}" class="nav-btn export-csv-btn">
+                 Export
+            </a>
             </div>
         </div>
 
@@ -34,7 +37,7 @@
             </a>
         </div>
 
-        <!-- WEEK DROPDOWN (for quick jump) -->
+        <!-- WEEK DROPDOWN -->
         <div class="week-selector">
             <label for="week-select">Quick Jump to Week:</label>
             <select id="week-select" onchange="location.href='{{ url_for('summary_board') }}?week=' + this.value">

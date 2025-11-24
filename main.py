@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 import sqlite3
 from datetime import datetime, timedelta
 import os
+import xlsxwriter
+from io import BytesIO
 
 DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
 
@@ -509,6 +511,168 @@ def summary_board():
         current_week=current_week,
         is_current_week=is_current_week,
         is_future_week=is_future_week
+    )
+
+
+@app.route('/export_summary_excel')
+def export_summary_excel():
+    """Export summary data to formatted Excel file"""
+    selected_week = request.args.get('week', get_current_week_monday())
+
+    start_date = datetime.strptime(selected_week, '%Y-%m-%d')
+    week_number = start_date.isocalendar()[1]
+    week_cycle = get_week_cycle(selected_week)
+
+    # Get the summary data
+    daily_breakdown = get_daily_breakdown_by_class(selected_week)
+
+    # Create Excel file in memory
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+
+    # Define formats
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'font_color': '#2c3e50',
+        'align': 'left'
+    })
+
+    subtitle_format = workbook.add_format({
+        'font_size': 12,
+        'font_color': '#7f8c8d',
+        'italic': True,
+        'align': 'left'
+    })
+
+    day_header_format = workbook.add_format({
+        'bold': True,
+        'font_size': 14,
+        'font_color': '#2c3e50',
+        'bg_color': '#ecf0f1',
+        'border': 1,
+        'align': 'center'
+    })
+
+    table_header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#34495e',
+        'font_color': 'white',
+        'border': 1,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    class_name_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#f8f9fa',
+        'border': 1,
+        'align': 'left'
+    })
+
+    data_format = workbook.add_format({
+        'border': 1,
+        'align': 'center'
+    })
+
+    total_row_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#d5e8d4',
+        'border': 2,
+        'align': 'center'
+    })
+
+    total_label_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#d5e8d4',
+        'border': 2,
+        'align': 'left'
+    })
+
+    grand_total_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#6b8e65',
+        'font_color': 'white',
+        'border': 2,
+        'align': 'center',
+        'font_size': 11
+    })
+
+    # Create worksheet
+    worksheet = workbook.add_worksheet('Lunch Summary')
+
+    # Set column widths
+    worksheet.set_column('A:A', 25)
+    worksheet.set_column('B:Z', 12)
+
+    # Write title and subtitle
+    current_row = 0
+    worksheet.write(current_row, 0, f'Lunch Selection Summary - Week {week_number} (Cycle {week_cycle})', title_format)
+    current_row += 1
+    worksheet.write(current_row, 0, f'Week of {start_date.strftime("%d %b %Y")}', subtitle_format)
+    current_row += 2
+
+    # Process each day
+    for date, data in sorted(daily_breakdown.items()):
+        if sum(data['item_totals'].values()) > 0:
+            # Day header
+            worksheet.merge_range(current_row, 0, current_row, len(data['menu_items']),
+                                  data['day_name'], day_header_format)
+            current_row += 1
+
+            # Table header row
+            worksheet.write(current_row, 0, 'Class / Menu Item', table_header_format)
+            col = 1
+            for item in data['menu_items']:
+                worksheet.write(current_row, col, item['name'], table_header_format)
+                col += 1
+            worksheet.write(current_row, col, 'Total', table_header_format)
+            current_row += 1
+
+            # Data rows for each class
+            for cls in data['classes']:
+                worksheet.write(current_row, 0, cls['name'], class_name_format)
+                col = 1
+                for item in data['menu_items']:
+                    count = data['data'][cls['id']][item['id']]
+                    if count > 0:
+                        worksheet.write(current_row, col, count, data_format)
+                    else:
+                        worksheet.write(current_row, col, '', data_format)
+                    col += 1
+
+                class_total = data['class_totals'][cls['id']]
+                if class_total > 0:
+                    worksheet.write(current_row, col, class_total, data_format)
+                else:
+                    worksheet.write(current_row, col, '', data_format)
+                current_row += 1
+
+            # Total row
+            worksheet.write(current_row, 0, 'TOTAL', total_label_format)
+            col = 1
+            for item in data['menu_items']:
+                total = data['item_totals'][item['id']]
+                if total > 0:
+                    worksheet.write(current_row, col, total, total_row_format)
+                else:
+                    worksheet.write(current_row, col, '', total_row_format)
+                col += 1
+
+            grand_total = sum(data['item_totals'].values())
+            worksheet.write(current_row, col, grand_total, grand_total_format)
+            current_row += 3
+
+    workbook.close()
+    output.seek(0)
+
+    filename = f'lunch_summary_week_{week_number}_{start_date.strftime("%Y-%m-%d")}.xlsx'
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
     )
 
 # ==================== APPLICATION STARTUP ====================
