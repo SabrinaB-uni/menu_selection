@@ -513,7 +513,6 @@ def summary_board():
         is_future_week=is_future_week
     )
 
-
 @app.route('/export_summary_excel')
 def export_summary_excel():
     """Export summary data to formatted Excel file"""
@@ -601,9 +600,21 @@ def export_summary_excel():
     # Create worksheet
     worksheet = workbook.add_worksheet('Lunch Summary')
 
-    # Set column widths
-    worksheet.set_column('A:A', 25)
-    worksheet.set_column('B:Z', 12)
+    # Calculate optimal column widths based on content
+    # Get the longest class name
+    max_class_name_length = max(len(cls['name']) for cls in
+                                daily_breakdown[list(daily_breakdown.keys())[0]]['classes']) if daily_breakdown else 20
+    max_class_name_length = max(max_class_name_length, len('Class / Menu Item'))
+
+    # Get the longest menu item name
+    max_menu_item_length = 10  # minimum width
+    for date, data in daily_breakdown.items():
+        for item in data['menu_items']:
+            max_menu_item_length = max(max_menu_item_length, len(item['name']))
+
+    # Set column widths with padding
+    worksheet.set_column('A:A', max_class_name_length + 3)  # Class/Menu Item column with padding
+    worksheet.set_column('B:Z', max(max_menu_item_length + 2, 12))  # Menu item columns with padding
 
     # Write title and subtitle
     current_row = 0
