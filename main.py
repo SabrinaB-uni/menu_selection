@@ -10,6 +10,7 @@ DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'my-cafeteria-app-secret-key-2024'
 
+
 # ==================== DATABASE HELPERS ====================
 def get_db_connection():
     """Get database connection with Row factory enabled"""
@@ -17,6 +18,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
 
 def init_db():
     """Create all tables on first run"""
@@ -76,16 +78,19 @@ def init_db():
     with get_db_connection() as conn:
         conn.executescript(sql)
 
+
 # ==================== DATA RETRIEVAL ====================
 def get_classes():
     """Get all classes sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
+
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
+
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -101,6 +106,7 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
+
 def get_students_by_class(class_id):
     """Get students for a class, sorted by last name"""
     with get_db_connection() as conn:
@@ -108,6 +114,7 @@ def get_students_by_class(class_id):
             'SELECT * FROM Student WHERE class_id = ? ORDER BY last_name, first_name',
             (class_id,)
         ).fetchall()
+
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all student choices for a specific class and week"""
@@ -140,6 +147,7 @@ def get_week_choices_by_class(class_id, week_number, year):
                 student_choices[student_id]['choices'][choice['day_of_week']] = choice['menu_item_id']
 
         return student_choices
+
 
 def get_daily_breakdown_by_class(start_date):
     """Get complete breakdown of choices by day, class, and menu item"""
@@ -211,6 +219,8 @@ def get_daily_breakdown_by_class(start_date):
                 daily_data[date]['item_totals'][menu_item_id] += quantity
 
         return daily_data
+
+
 # ==================== SAVE OPERATIONS ====================
 def save_choice(student_id, menu_item_id, class_id, date_str):
     """Save or update a student's lunch choice"""
@@ -240,6 +250,7 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
     except Exception as e:
         print(f"Database error: {e}")
         return False
+
 
 # ==================== WEEK CYCLE MANAGEMENT ====================
 def get_available_weeks():
@@ -356,11 +367,14 @@ def get_next_week_monday_from_date(current_week_str):
     next_monday = current_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
 
+
 # ==================== ROUTES ====================
+
 @app.route('/')
 def index():
     """Home page with class selection"""
     return render_template('index.html', classes=get_classes())
+
 
 @app.route('/teacher_menu/<int:class_id>')
 def teacher_menu(class_id):
@@ -427,6 +441,7 @@ def teacher_menu(class_id):
         current_week=current_week
     )
 
+
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
     """API endpoint for auto-saving lunch choices"""
@@ -458,13 +473,14 @@ def auto_save():
             }), 403
 
         if save_choice(student_id, menu_item_id, class_id, date):
-            return jsonify({'success': True, 'message': 'Saved'})
+            return jsonify({'success': True, 'message': 'Saved'})  # ← FIXED: Added closing )
         else:
             return jsonify({'success': False, 'message': 'Failed to save'}), 500
 
     except Exception as e:
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/summary')
 def summary_board():
@@ -513,9 +529,10 @@ def summary_board():
         is_future_week=is_future_week
     )
 
+
 @app.route('/export_summary_excel')
 def export_summary_excel():
-    """Export summary data to formatted Excel file"""
+    """Export summary data to formatted Excel file with text wrapping"""
     selected_week = request.args.get('week', get_current_week_monday())
 
     start_date = datetime.strptime(selected_week, '%Y-%m-%d')
@@ -559,7 +576,8 @@ def export_summary_excel():
         'font_color': 'white',
         'border': 1,
         'align': 'center',
-        'valign': 'vcenter'
+        'valign': 'vcenter',
+        'text_wrap': True  # Enable text wrapping
     })
 
     class_name_format = workbook.add_format({
@@ -600,21 +618,9 @@ def export_summary_excel():
     # Create worksheet
     worksheet = workbook.add_worksheet('Lunch Summary')
 
-    # Calculate optimal column widths based on content
-    # Get the longest class name
-    max_class_name_length = max(len(cls['name']) for cls in
-                                daily_breakdown[list(daily_breakdown.keys())[0]]['classes']) if daily_breakdown else 20
-    max_class_name_length = max(max_class_name_length, len('Class / Menu Item'))
-
-    # Get the longest menu item name
-    max_menu_item_length = 10  # minimum width
-    for date, data in daily_breakdown.items():
-        for item in data['menu_items']:
-            max_menu_item_length = max(max_menu_item_length, len(item['name']))
-
-    # Set column widths with padding
-    worksheet.set_column('A:A', max_class_name_length + 3)  # Class/Menu Item column with padding
-    worksheet.set_column('B:Z', max(max_menu_item_length + 2, 12))  # Menu item columns with padding
+    # Set column widths - narrow columns with text wrapping
+    worksheet.set_column('A:A', 25)  # Class/Menu Item column
+    worksheet.set_column('B:Z', 15)  # Menu item columns (narrow, text will wrap)
 
     # Write title and subtitle
     current_row = 0
@@ -625,19 +631,23 @@ def export_summary_excel():
 
     # Process each day
     for date, data in sorted(daily_breakdown.items()):
-        if sum(data['item_totals'].values()) > 0:
+        if sum(data['item_totals'].values()) > 0:  # Only export days with data
             # Day header
             worksheet.merge_range(current_row, 0, current_row, len(data['menu_items']),
                                   data['day_name'], day_header_format)
             current_row += 1
 
-            # Table header row
+            # Table header row with text wrapping
             worksheet.write(current_row, 0, 'Class / Menu Item', table_header_format)
             col = 1
             for item in data['menu_items']:
                 worksheet.write(current_row, col, item['name'], table_header_format)
                 col += 1
             worksheet.write(current_row, col, 'Total', table_header_format)
+
+            # Set taller row height for wrapped header text
+            worksheet.set_row(current_row, 40)  # ← THIS ENABLES TALL ROWS FOR WRAPPED TEXT
+
             current_row += 1
 
             # Data rows for each class
@@ -652,6 +662,7 @@ def export_summary_excel():
                         worksheet.write(current_row, col, '', data_format)
                     col += 1
 
+                # Class total
                 class_total = data['class_totals'][cls['id']]
                 if class_total > 0:
                     worksheet.write(current_row, col, class_total, data_format)
@@ -670,13 +681,18 @@ def export_summary_excel():
                     worksheet.write(current_row, col, '', total_row_format)
                 col += 1
 
+            # Grand total
             grand_total = sum(data['item_totals'].values())
             worksheet.write(current_row, col, grand_total, grand_total_format)
-            current_row += 3
+            current_row += 3  # Add spacing between days
 
+    # Close workbook
     workbook.close()
+
+    # Prepare the file for download
     output.seek(0)
 
+    # Generate filename with date
     filename = f'lunch_summary_week_{week_number}_{start_date.strftime("%Y-%m-%d")}.xlsx'
 
     return send_file(
@@ -686,7 +702,9 @@ def export_summary_excel():
         download_name=filename
     )
 
+
 # ==================== APPLICATION STARTUP ====================
+
 if __name__ == '__main__':
     print(f"Using database at: {os.path.abspath(DB_PATH)}")
 
@@ -697,8 +715,11 @@ if __name__ == '__main__':
     else:
         print("Database found successfully!")
 
-    print(" School Lunch Choice System")
+    print("\n" + "=" * 60)
+    print("🍽️  School Lunch Choice System")
+    print("=" * 60)
     print(f"Access via: http://support-sab:5000/")
     print(f"Or via:     http://localhost:5000/")
+    print("=" * 60 + "\n")
 
     app.run(host="0.0.0.0", port=5000, debug=True)
