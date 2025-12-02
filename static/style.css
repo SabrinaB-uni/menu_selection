@@ -299,7 +299,7 @@ body {
 
 /* Week Info Status States */
 
-/* Past weeks (read-only) - Gray */
+/* Past weeks - Gray */
 .week-info.read-only {
     background-color: #f1f3f5;
     border: 2px solid #adb5bd;
@@ -309,7 +309,7 @@ body {
     background-color: #6c757d;
 }
 
-/* Current week (editable) - Green */
+/* Current week - Green */
 .week-info.current {
     background-color: #eef5ed;
     border: 2px solid #9fb89a;
@@ -320,7 +320,7 @@ body {
     box-shadow: 0 2px 6px rgba(107, 142, 101, 0.25);
 }
 
-/* Future weeks (editable) - Blue */
+/* Future weeks - Blue */
 .week-info.future {
     background-color: #e8f4f8;
     border: 2px solid #7ec8e3;
@@ -373,7 +373,7 @@ a.class-card:hover {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Force white color on all link states */
+/* white color on all link states */
 a.class-card,
 a.class-card:link,
 a.class-card:visited,
@@ -382,7 +382,7 @@ a.class-card:active {
     color: white !important;
 }
 
-/* Force white on all child elements too */
+/* white on all child elements too */
 a.class-card h3,
 a.class-card span,
 a.class-card * {

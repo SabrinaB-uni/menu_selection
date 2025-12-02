@@ -10,7 +10,6 @@ DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'my-cafeteria-app-secret-key-2024'
 
-
 # ==================== DATABASE HELPERS ====================
 def get_db_connection():
     """Get database connection with Row factory enabled"""
@@ -18,7 +17,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 
 def init_db():
     """Create all tables on first run"""
@@ -78,19 +76,16 @@ def init_db():
     with get_db_connection() as conn:
         conn.executescript(sql)
 
-
 # ==================== DATA RETRIEVAL ====================
 def get_classes():
     """Get all classes sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
-
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
-
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -106,7 +101,6 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
-
 def get_students_by_class(class_id):
     """Get students for a class, sorted by last name"""
     with get_db_connection() as conn:
@@ -114,7 +108,6 @@ def get_students_by_class(class_id):
             'SELECT * FROM Student WHERE class_id = ? ORDER BY last_name, first_name',
             (class_id,)
         ).fetchall()
-
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all student choices for a specific class and week"""
@@ -147,7 +140,6 @@ def get_week_choices_by_class(class_id, week_number, year):
                 student_choices[student_id]['choices'][choice['day_of_week']] = choice['menu_item_id']
 
         return student_choices
-
 
 def get_daily_breakdown_by_class(start_date):
     """Get complete breakdown of choices by day, class, and menu item"""
@@ -220,7 +212,6 @@ def get_daily_breakdown_by_class(start_date):
 
         return daily_data
 
-
 # ==================== SAVE OPERATIONS ====================
 def save_choice(student_id, menu_item_id, class_id, date_str):
     """Save or update a student's lunch choice"""
@@ -250,7 +241,6 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
     except Exception as e:
         print(f"Database error: {e}")
         return False
-
 
 # ==================== WEEK CYCLE MANAGEMENT ====================
 def get_available_weeks():
@@ -367,14 +357,11 @@ def get_next_week_monday_from_date(current_week_str):
     next_monday = current_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
 
-
 # ==================== ROUTES ====================
-
 @app.route('/')
 def index():
     """Home page with class selection"""
     return render_template('index.html', classes=get_classes())
-
 
 @app.route('/teacher_menu/<int:class_id>')
 def teacher_menu(class_id):
@@ -441,7 +428,6 @@ def teacher_menu(class_id):
         current_week=current_week
     )
 
-
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
     """API endpoint for auto-saving lunch choices"""
@@ -473,14 +459,13 @@ def auto_save():
             }), 403
 
         if save_choice(student_id, menu_item_id, class_id, date):
-            return jsonify({'success': True, 'message': 'Saved'})  # ← FIXED: Added closing )
+            return jsonify({'success': True, 'message': 'Saved'})
         else:
             return jsonify({'success': False, 'message': 'Failed to save'}), 500
 
     except Exception as e:
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @app.route('/summary')
 def summary_board():
@@ -529,7 +514,6 @@ def summary_board():
         is_future_week=is_future_week
     )
 
-
 @app.route('/export_summary_excel')
 def export_summary_excel():
     """Export summary data to formatted Excel file with text wrapping"""
@@ -577,7 +561,7 @@ def export_summary_excel():
         'border': 1,
         'align': 'center',
         'valign': 'vcenter',
-        'text_wrap': True  # Enable text wrapping
+        'text_wrap': True
     })
 
     class_name_format = workbook.add_format({
@@ -620,7 +604,7 @@ def export_summary_excel():
 
     # Set column widths - narrow columns with text wrapping
     worksheet.set_column('A:A', 25)  # Class/Menu Item column
-    worksheet.set_column('B:Z', 15)  # Menu item columns (narrow, text will wrap)
+    worksheet.set_column('B:Z', 15)  # Menu item columns
 
     # Write title and subtitle
     current_row = 0
@@ -646,7 +630,7 @@ def export_summary_excel():
             worksheet.write(current_row, col, 'Total', table_header_format)
 
             # Set taller row height for wrapped header text
-            worksheet.set_row(current_row, 40)  # ← THIS ENABLES TALL ROWS FOR WRAPPED TEXT
+            worksheet.set_row(current_row, 40)
 
             current_row += 1
 
@@ -701,10 +685,7 @@ def export_summary_excel():
         as_attachment=True,
         download_name=filename
     )
-
-
 # ==================== APPLICATION STARTUP ====================
-
 if __name__ == '__main__':
     print(f"Using database at: {os.path.abspath(DB_PATH)}")
 
@@ -715,11 +696,9 @@ if __name__ == '__main__':
     else:
         print("Database found successfully!")
 
-    print("\n" + "=" * 60)
-    print("🍽️  School Lunch Choice System")
+    print(" School Lunch Choice System")
     print("=" * 60)
     print(f"Access via: http://support-sab:5000/")
     print(f"Or via:     http://localhost:5000/")
-    print("=" * 60 + "\n")
 
     app.run(host="0.0.0.0", port=5000, debug=True)
