@@ -48,8 +48,14 @@ body {
 .header-nav {
     position: absolute;
     top: 15px;
-    right: 15px;
+    right: 25px;
     margin: 0;
+}
+
+/* Left-aligned header navigation */
+.header-nav-left {
+    left: 15px;
+    right: auto;
 }
 
 .nav-btn {
@@ -68,12 +74,14 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
 }
+
+
 /* ==================== EXPORT CSV BUTTON IN HEADER ==================== */
 .export-csv-btn {
     background: white !important;
     color: #27ae60 !important;
     border: 2px solid #27ae60 !important;
-    margin-left: 10px;
+    margin-right: 10px;
 }
 
 .export-csv-btn:hover {

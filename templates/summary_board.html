@@ -11,13 +11,18 @@
                 <div class="header">
             <h1>Lunch Selection Summary</h1>
             <h2>Weekly Overview by Class and Menu Item</h2>
-            <div class="header-nav">
-                <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
-                <a href="{{ url_for('export_summary_excel', week=selected_week) }}" class="nav-btn export-csv-btn">
-                 Export
-            </a>
-            </div>
-        </div>
+
+                        <!-- Back button on LEFT -->
+                        <div class="header-nav header-nav-left">
+                            <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
+                        </div>
+
+                        <!-- Export button on RIGHT -->
+                        <div class="header-nav">
+                            <a href="{{ url_for('export_summary_excel', week=selected_week) }}"
+                               class="nav-btn export-csv-btn">Export</a>
+                        </div>
+                    </div>
 
         <!-- WEEK NAVIGATION BUTTONS -->
         <div class="week-navigation">
