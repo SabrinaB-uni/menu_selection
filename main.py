@@ -5,7 +5,7 @@ import os
 import xlsxwriter
 from io import BytesIO
 
-DB_PATH = r'C:\Users\sbouzouina\menu-selection\menu_selection.db'
+DB_PATH = 'menu_selection.db'
 
 app = Flask(__name__)
 app.secret_key = 'my-cafeteria-app-secret-key-2024'
@@ -697,7 +697,6 @@ if __name__ == '__main__':
         print("Database found successfully!")
 
     print(" School Lunch Choice System")
-    print("=" * 60)
     print(f"Access via: http://support-sab:5000/")
     print(f"Or via:     http://localhost:5000/")
 
