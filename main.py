@@ -8,7 +8,7 @@ from io import BytesIO
 DB_PATH = 'menu_selection.db'
 
 app = Flask(__name__)
-app.secret_key = 'my-cafeteria-app-secret-key-2024'
+app.secret_key = 'menu-app-key'
 
 # ==================== DATABASE HELPERS ====================
 def get_db_connection():
