@@ -98,7 +98,7 @@
                                         data-student-id="{{ student.id }}"
                                         data-date="{{ day.date }}"
                                         data-class-id="{{ class_info.id }}">
-                                    <option value="">-- No selection --</option>
+                                    <option value=""> </option>
                                    {% for item in day.menu_items %}
                                      <option value="{{ item.id }}"
                                             {% if student.id in student_choices and
