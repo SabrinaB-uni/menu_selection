@@ -8,21 +8,20 @@
 </head>
 <body>
     <div class="container">
-                <div class="header">
+        <div class="header">
             <h1>Lunch Selection Summary</h1>
             <h2>Weekly Overview by Class and Menu Item</h2>
 
-                        <!-- Back button on LEFT -->
-                        <div class="header-nav header-nav-left">
-                            <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
-                        </div>
+            <!-- Back button on LEFT -->
+            <div class="header-nav header-nav-left">
+                <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
+            </div>
 
-                        <!-- Export button on RIGHT -->
-                        <div class="header-nav">
-                            <a href="{{ url_for('export_summary_excel', week=selected_week) }}"
-                               class="nav-btn export-csv-btn">Export</a>
-                        </div>
-                    </div>
+            <div class="header-nav">
+                <a href="{{ url_for('export_summary_excel', week=selected_week) }}"
+                   class="nav-btn export-csv-btn">Export</a>
+            </div>
+        </div>
 
         <!-- WEEK NAVIGATION BUTTONS -->
         <div class="week-navigation">
@@ -67,8 +66,13 @@
         <!-- DAILY SUMMARIES -->
         <div class="daily-summaries">
             {% for date, data in daily_breakdown.items()|sort %}
-            <div class="daily-summary">
-                <h3>{{ data.day_name }}</h3>
+            <div class="daily-summary {% if data.is_packed_lunch_day %}packed-lunch-day-summary{% endif %}">
+                <h3>
+                    {{ data.day_name }}
+                    {% if data.is_packed_lunch_day %}
+                    <span class="packed-lunch-summary-badge"> Packed Lunch Served in Classroom</span>
+                    {% endif %}
+                </h3>
 
                 {% if data.item_totals.values()|sum > 0 %}
                 <table class="matrix-table">
@@ -101,7 +105,7 @@
                     </tbody>
                 </table>
                 {% else %}
-                <div class="-">
+                <div class="no-selections">
                     No meal selections have been made for this day yet.
                 </div>
                 {% endif %}

@@ -794,3 +794,77 @@ a.class-card .arrow {
 .p-20 {
     padding: 20px;
 }
+
+/* ==================== PACKED LUNCH DAY STYLING ==================== */
+
+/* Header for packed lunch days - STRONG ORANGE/YELLOW */
+.packed-lunch-day-header {
+    background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%) !important;
+    color: white !important;
+}
+
+.packed-lunch-day-header .day-date {
+    color: white !important;
+    opacity: 0.95;
+}
+
+.packed-lunch-badge {
+    background-color: #ffffff;
+    color: #ff6600;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: 700;
+    margin-top: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Cell - Light yellow background ONLY when selection made on packed lunch day */
+.packed-lunch-day-cell {
+    background-color: #fff3cd;
+    border-left: 3px solid #ffa500;
+}
+
+/* Dropdown - Bright yellow */
+.packed-lunch-day-select {
+    background-color: #ffeb3b;
+    border: 2px solid #ff9800;
+    font-weight: 600;
+}
+
+.packed-lunch-day-select:focus {
+    background-color: #ffeb3b;
+    border-color: #ff6600;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.3);
+}
+
+/* Read-only - Yellow */
+.packed-lunch-day-readonly {
+    background-color: #ffeb3b;
+    border: 2px solid #ff9800;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.packed-lunch-day-readonly .readonly-choice {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Summary board - Light yellow background with orange border */
+.packed-lunch-day-summary {
+    background-color: #fff9e6;
+    border-left: 5px solid #ffa500;
+    border-top: 2px solid #ffa500;
+    border-bottom: 2px solid #ffa500;
+}
+
+.packed-lunch-summary-badge {
+    background: linear-gradient(135deg, #ff8c00 0%, #ff6600 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(255, 140, 0, 0.4);
+}
