@@ -18,6 +18,7 @@ def get_db_connection():
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
+
 def init_db():
     """Create all tables on first run"""
     sql = """
@@ -70,12 +71,20 @@ def init_db():
         week_number  INTEGER NOT NULL,
         year         INTEGER NOT NULL,
         cycle_number INTEGER NOT NULL,
+        packed_lunch TEXT DEFAULT '',
         UNIQUE(week_number, year)
     );
     """
     with get_db_connection() as conn:
         conn.executescript(sql)
 
+        # Add packed_lunch column if it doesn't exist (for existing databases)
+        try:
+            conn.execute("ALTER TABLE Week_Cycle ADD COLUMN packed_lunch TEXT DEFAULT ''")
+            print("Added packed_lunch column to Week_Cycle table")
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
 # ==================== DATA RETRIEVAL ====================
 def get_classes():
     """Get all classes sorted by name"""
@@ -385,10 +394,17 @@ def is_week_editable(selected_week_str):
     # Only allow editing for weeks that haven't started yet
     return selected_monday > current_monday
 
+
 def get_packed_lunch_days(week_number, year):
     """
     Get which days are packed lunch for a specific week.
     Returns a list of day numbers (0=Monday, 4=Friday)
+
+    Examples:
+      '4' → [4] (Friday only)
+      '0,4' → [0, 4] (Monday and Friday)
+      '1,2,3' → [1, 2, 3] (Tuesday, Wednesday, Thursday)
+      '' → [] (No packed lunch days)
     """
     with get_db_connection() as conn:
         result = conn.execute("""
@@ -399,11 +415,31 @@ def get_packed_lunch_days(week_number, year):
 
         if result and result['packed_lunch']:
             try:
-                # Split comma-separated values and convert to integers
-                days = [int(day.strip()) for day in result['packed_lunch'].split(',') if day.strip()]
+                # Get the raw string and strip whitespace
+                days_str = result['packed_lunch'].strip()
+
+                # Handle empty string
+                if not days_str:
+                    return []
+
+                # Split by comma, strip whitespace, filter empty strings, convert to int
+                days = []
+                for day in days_str.split(','):
+                    day_cleaned = day.strip()
+                    if day_cleaned:  # Only process non-empty strings
+                        try:
+                            days.append(int(day_cleaned))
+                        except ValueError:
+                            print(f"Warning: Invalid day value '{day_cleaned}' in packed_lunch")
+                            continue
+
+                print(f"Packed lunch days for Week {week_number}/{year}: {days}")
                 return days
-            except:
+
+            except Exception as e:
+                print(f"Error parsing packed lunch days: {e}")
                 return []
+
         return []
 
 def is_packed_lunch_day(week_number, year, day_of_week):
@@ -656,7 +692,7 @@ def export_summary_excel():
         'bold': True,
         'font_size': 14,
         'font_color': '#000000',
-        'bg_color': '#FFFF00',  # Bright yellow
+        'bg_color': '#FFFF00',
         'border': 2,
         'align': 'center'
     })
