@@ -10,6 +10,7 @@ DB_PATH = 'menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'menu-app-key'
 
+
 # ==================== DATABASE HELPERS ====================
 def get_db_connection():
     """Get database connection with Row factory enabled"""
@@ -81,20 +82,24 @@ def init_db():
         # Add packed_lunch column if it doesn't exist (for existing databases)
         try:
             conn.execute("ALTER TABLE Week_Cycle ADD COLUMN packed_lunch TEXT DEFAULT ''")
-            print("Added packed_lunch column to Week_Cycle table")
+            print("✅ Added packed_lunch column to Week_Cycle table")
         except sqlite3.OperationalError:
             # Column already exists
             pass
+
+
 # ==================== DATA RETRIEVAL ====================
 def get_classes():
     """Get all classes sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
+
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
+
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -110,6 +115,7 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
+
 def get_students_by_class(class_id):
     """Get students for a class, sorted by last name"""
     with get_db_connection() as conn:
@@ -117,6 +123,7 @@ def get_students_by_class(class_id):
             'SELECT * FROM Student WHERE class_id = ? ORDER BY last_name, first_name',
             (class_id,)
         ).fetchall()
+
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all student choices for a specific class and week"""
@@ -159,21 +166,11 @@ def get_daily_breakdown_by_class(start_date):
     # Get packed lunch days for this week
     packed_lunch_days = get_packed_lunch_days(week_number, year)
 
-    # === ADD DEBUG ===
-    print(f"\n=== SUMMARY BOARD DEBUG ===")
-    print(f"Start Date: {start_date}")
-    print(f"Week Number: {week_number}, Year: {year}")
-    print(f"Packed Lunch Days: {packed_lunch_days}")
-    # === END DEBUG ===
-
     with get_db_connection() as conn:
         classes = conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
         menu_items = conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
 
-        print(f"Classes Count: {len(classes)}")
-        print(f"Menu Items Count: {len(menu_items)}")
-
-        # Get actual choice data - FIXED GROUP BY
+        # Get actual choice data
         results = conn.execute("""
             SELECT 
                 ch.day_of_week,
@@ -189,14 +186,6 @@ def get_daily_breakdown_by_class(start_date):
             GROUP BY ch.day_of_week, cl.name, cl.id, m.item_name, m.id
             ORDER BY ch.day_of_week, cl.name, m.item_name
         """, (week_number, year)).fetchall()
-
-        print(f"Results Count: {len(results)}")
-        if len(results) > 0:
-            print("First 5 results:")
-            for row in results[:5]:
-                print(f"  Day {row['day_of_week']}: {row['class_name']} - {row['menu_item']} x{row['quantity']}")
-        else:
-            print("NO RESULTS RETURNED FROM QUERY!")
 
         # Initialize data structure for all days
         daily_data = {}
@@ -230,12 +219,9 @@ def get_daily_breakdown_by_class(start_date):
                 daily_data[date]['item_totals'][item['id']] = 0
 
         # Fill in actual data
-        print(f"\nFilling data into daily_data structure...")
         for row in results:
             day_of_week = row['day_of_week']
             date = (start_dt + timedelta(days=day_of_week)).strftime('%Y-%m-%d')
-
-            print(f"Processing: Day {day_of_week} -> Date {date}")
 
             if date in daily_data:
                 class_id = row['class_id']
@@ -246,19 +232,8 @@ def get_daily_breakdown_by_class(start_date):
                 daily_data[date]['class_totals'][class_id] += quantity
                 daily_data[date]['item_totals'][menu_item_id] += quantity
 
-                print(f"  Added: {row['class_name']} - {row['menu_item']} x{quantity}")
-            else:
-                print(f"  WARNING: Date {date} not in daily_data!")
-
-        # Summary of what we're returning
-        print(f"\nReturning daily_data with {len(daily_data)} days:")
-        for date, data in daily_data.items():
-            total = sum(data['item_totals'].values())
-            print(f"  {date}: {total} total selections")
-
-        print("=== END DEBUG ===\n")
-
         return daily_data
+
 
 # ==================== SAVE OPERATIONS ====================
 def save_choice(student_id, menu_item_id, class_id, date_str):
@@ -289,6 +264,7 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
     except Exception as e:
         print(f"Database error: {e}")
         return False
+
 
 # ==================== WEEK CYCLE MANAGEMENT ====================
 def get_available_weeks():
@@ -321,28 +297,30 @@ def get_available_weeks():
 
         return formatted_weeks
 
+
 def ensure_week_cycles_exist():
-    """Auto-generate week cycles for past 4 and future 8 weeks"""
+    """
+    Check if weeks exist, but DON'T auto-generate.
+    Weeks must be manually added to database.
+    """
+    # Do nothing - weeks are managed manually in database
+    pass
+
+
+def week_exists(week_monday_str):
+    """Check if a week exists in the database"""
+    date = datetime.strptime(week_monday_str, '%Y-%m-%d')
+    week_number = date.isocalendar()[1]
+    year = date.year
+
     with get_db_connection() as conn:
-        today = datetime.now().date()
+        result = conn.execute("""
+            SELECT 1 FROM Week_Cycle 
+            WHERE week_number = ? AND year = ?
+        """, (week_number, year)).fetchone()
 
-        # Generate weeks from -4 to +8 relative to today
-        for weeks_offset in range(-4, 20):  # Changed from 9 to 20 to include more future weeks
-            days_since_monday = today.weekday()
-            this_monday = today - timedelta(days=days_since_monday)
-            target_monday = this_monday + timedelta(weeks=weeks_offset)
+        return result is not None
 
-            week_number = target_monday.isocalendar()[1]
-            year = target_monday.year
-            cycle_number = ((week_number - 1) % 3) + 1
-
-            conn.execute("""
-                INSERT OR IGNORE INTO Week_Cycle 
-                (week_number, year, cycle_number, packed_lunch)
-                VALUES (?, ?, ?, '')
-            """, (week_number, year, cycle_number))
-
-        conn.commit()
 
 def get_current_week_monday():
     """Get Monday of current week"""
@@ -351,6 +329,7 @@ def get_current_week_monday():
     current_monday = today - timedelta(days=days_since_monday)
     return current_monday.strftime('%Y-%m-%d')
 
+
 def get_next_week_monday():
     """Get Monday of next week"""
     today = datetime.now().date()
@@ -358,6 +337,7 @@ def get_next_week_monday():
     this_monday = today - timedelta(days=days_since_monday)
     next_monday = this_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
+
 
 def get_week_cycle(date_str):
     """Get week cycle number for a specific date"""
@@ -378,6 +358,7 @@ def get_week_cycle(date_str):
             # Fallback calculation
             return ((week_number - 1) % 3) + 1
 
+
 def is_week_editable(selected_week_str):
     """
     Check if a week is editable.
@@ -395,57 +376,67 @@ def is_week_editable(selected_week_str):
     return selected_monday > current_monday
 
 
-def get_packed_lunch_days(week_number, year):
+def is_packed_lunch_day(week_number, year, day_of_week):
     """
-    Get which days are packed lunch for a specific week.
-    Returns a list of day numbers (0=Monday, 4=Friday)
+    Check if a specific day is a packed lunch day using SQL pattern matching.
+
+    Args:
+        week_number: ISO week number (1-53)
+        year: Year (e.g., 2025)
+        day_of_week: Python weekday (0=Monday, 1=Tuesday, ..., 4=Friday)
+
+    Returns:
+        True if packed lunch day, False otherwise
+
+    Database Format:
+        packed_lunch column stores '1,3,5' where 1=Monday, 5=Friday
 
     Examples:
-      '4' → [4] (Friday only)
-      '0,4' → [0, 4] (Monday and Friday)
-      '1,2,3' → [1, 2, 3] (Tuesday, Wednesday, Thursday)
-      '' → [] (No packed lunch days)
+        is_packed_lunch_day(52, 2025, 0) → checks if Monday is packed lunch
+        is_packed_lunch_day(52, 2025, 4) → checks if Friday is packed lunch
     """
+    # Convert Python weekday (0-4) to database format (1-5)
+    human_day = day_of_week + 1
+
     with get_db_connection() as conn:
         result = conn.execute("""
-            SELECT packed_lunch 
-            FROM Week_Cycle 
-            WHERE week_number = ? AND year = ?
-        """, (week_number, year)).fetchone()
+            SELECT 
+                CASE 
+                    WHEN ',' || COALESCE(packed_lunch, '') || ',' LIKE '%,' || ? || ',%' 
+                    THEN 1 
+                    ELSE 0 
+                END AS has_packed_lunch
+            FROM Week_Cycle
+            WHERE week_number = ? 
+              AND year = ?
+        """, (human_day, week_number, year)).fetchone()
 
-        if result and result['packed_lunch']:
-            try:
-                # Get the raw string and strip whitespace
-                days_str = result['packed_lunch'].strip()
+        if result:
+            return bool(result[0])
 
-                # Handle empty string
-                if not days_str:
-                    return []
+        # Week doesn't exist in database
+        return False
 
-                # Split by comma, strip whitespace, filter empty strings, convert to int
-                days = []
-                for day in days_str.split(','):
-                    day_cleaned = day.strip()
-                    if day_cleaned:  # Only process non-empty strings
-                        try:
-                            days.append(int(day_cleaned))
-                        except ValueError:
-                            print(f"Warning: Invalid day value '{day_cleaned}' in packed_lunch")
-                            continue
 
-                print(f"Packed lunch days for Week {week_number}/{year}: {days}")
-                return days
+def get_packed_lunch_days(week_number, year):
+    """
+    Get list of packed lunch days for a week.
 
-            except Exception as e:
-                print(f"Error parsing packed lunch days: {e}")
-                return []
+    Returns:
+        List of Python weekday numbers (0=Monday, 4=Friday)
+        Example: [0, 2, 4] means Monday, Wednesday, Friday
 
-        return []
+    Uses SQL pattern matching for reliability - no string parsing needed!
+    """
+    packed_days = []
 
-def is_packed_lunch_day(week_number, year, day_of_week):
-    """Check if a specific day is a packed lunch day"""
-    packed_days = get_packed_lunch_days(week_number, year)
-    return day_of_week in packed_days
+    # Check each weekday (0=Monday to 4=Friday)
+    for python_day in range(5):
+        if is_packed_lunch_day(week_number, year, python_day):
+            packed_days.append(python_day)
+
+    return packed_days
+
 
 def get_previous_week_monday(current_week_str):
     """Get Monday of the previous week"""
@@ -453,11 +444,13 @@ def get_previous_week_monday(current_week_str):
     previous_monday = current_monday - timedelta(days=7)
     return previous_monday.strftime('%Y-%m-%d')
 
+
 def get_next_week_monday_from_date(current_week_str):
     """Get Monday of the next week from a given date"""
     current_monday = datetime.strptime(current_week_str, '%Y-%m-%d')
     next_monday = current_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
+
 
 # ==================== ROUTES ====================
 @app.route('/')
@@ -486,24 +479,8 @@ def teacher_menu(class_id):
     week_cycle = get_week_cycle(selected_week)
 
     student_choices = get_week_choices_by_class(class_id, week_number, year)
-
-    # Get packed lunch days for this week
     packed_lunch_days = get_packed_lunch_days(week_number, year)
-
-    # === ADD DEBUG PRINTS HERE ===
-    print(f"\n=== DEBUG INFO ===")
-    print(f"Class ID: {class_id}")
-    print(f"Selected Week: {selected_week}")
-    print(f"Week Number: {week_number}, Year: {year}")
-    print(f"Week Cycle: {week_cycle}")
-    print(f"Packed Lunch Days: {packed_lunch_days}")
-
     students = get_students_by_class(class_id)
-    print(f"Students Count: {len(students)}")
-    print(f"Students: {[(s['id'], s['first_name'], s['last_name']) for s in students]}")
-    print(f"Student Choices Keys: {list(student_choices.keys())}")
-    print(f"Student Choices: {student_choices}")
-    # === END DEBUG ===
 
     # Generate week dates with menu items
     week_dates = []
@@ -511,10 +488,6 @@ def teacher_menu(class_id):
         date = start_date + timedelta(days=i)
         is_packed = i in packed_lunch_days
         menu_items = get_menu_items_for_day(i, week_cycle)
-
-        print(
-            f"Day {i} ({date.strftime('%A')}): Menu items = {[(m['id'], m['item_name']) for m in menu_items]}, Is Packed: {is_packed}")
-        # === END DEBUG ===
 
         week_dates.append({
             'date': date.strftime('%Y-%m-%d'),
@@ -532,6 +505,10 @@ def teacher_menu(class_id):
     previous_week = get_previous_week_monday(selected_week)
     next_week = get_next_week_monday_from_date(selected_week)
     current_week = get_next_week_monday()
+
+    # Check if navigation weeks exist in database
+    has_previous_week = week_exists(previous_week)
+    has_next_week = week_exists(next_week)
 
     is_current_week = (selected_week == current_week)
     is_future_week = is_editable and not is_current_week
@@ -552,8 +529,11 @@ def teacher_menu(class_id):
         previous_week=previous_week,
         next_week=next_week,
         current_week=current_week,
-        packed_lunch_days=packed_lunch_days
+        packed_lunch_days=packed_lunch_days,
+        has_previous_week=has_previous_week,
+        has_next_week=has_next_week
     )
+
 
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
@@ -594,11 +574,11 @@ def auto_save():
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
 @app.route('/summary')
 def summary_board():
-    """summary dashboard showing all choices for the week"""
-    # Default to Week 47,
-    selected_week = request.args.get('week', '2025-11-17')
+    """Summary dashboard showing all choices for the week"""
+    selected_week = request.args.get('week', get_current_week_monday())
 
     start_date = datetime.strptime(selected_week, '%Y-%m-%d')
     week_number = start_date.isocalendar()[1]
@@ -621,6 +601,10 @@ def summary_board():
     next_week = get_next_week_monday_from_date(selected_week)
     current_week = get_current_week_monday()
 
+    # Check if navigation weeks exist in database
+    has_previous_week = week_exists(previous_week)
+    has_next_week = week_exists(next_week)
+
     # Determine week type
     is_current_week = (selected_week == current_week)
     is_future_week = (selected_week > current_week)
@@ -639,8 +623,11 @@ def summary_board():
         next_week=next_week,
         current_week=current_week,
         is_current_week=is_current_week,
-        is_future_week=is_future_week
+        is_future_week=is_future_week,
+        has_previous_week=has_previous_week,
+        has_next_week=has_next_week
     )
+
 
 @app.route('/export_summary_excel')
 def export_summary_excel():
@@ -746,8 +733,8 @@ def export_summary_excel():
     worksheet = workbook.add_worksheet('Lunch Summary')
 
     # Set column widths
-    worksheet.set_column('A:A', 25)  # Class/Menu Item column
-    worksheet.set_column('B:Z', 15)  # Menu item columns
+    worksheet.set_column('A:A', 25)
+    worksheet.set_column('B:Z', 15)
 
     # Write title and subtitle
     current_row = 0
@@ -756,26 +743,23 @@ def export_summary_excel():
     worksheet.write(current_row, 0, f'Week of {start_date.strftime("%d %b %Y")}', subtitle_format)
     current_row += 2
 
-    # Get start date as datetime object
-    start_dt = datetime.strptime(selected_week, '%Y-%m-%d')
-
     # Process each day
     for date, data in sorted(daily_breakdown.items()):
-        if sum(data['item_totals'].values()) > 0:  # Only export days with data
+        if sum(data['item_totals'].values()) > 0:
 
             # Check if this day is a packed lunch day
             day_of_week = data['day_of_week']
-            is_packed_lunch_day = day_of_week in packed_lunch_days
+            is_packed_lunch_day_flag = day_of_week in packed_lunch_days
 
             # Choose header format based on packed lunch status
-            if is_packed_lunch_day:
+            if is_packed_lunch_day_flag:
                 header_format = packed_lunch_day_header_format
                 day_header_text = f"{data['day_name']} - Packed Lunches Served in Classroom"
             else:
                 header_format = day_header_format
                 day_header_text = data['day_name']
 
-            # Day header with yellow background for packed lunch days
+            # Day header
             worksheet.merge_range(current_row, 0, current_row, len(data['menu_items']),
                                   day_header_text, header_format)
             current_row += 1
@@ -788,7 +772,6 @@ def export_summary_excel():
                 col += 1
             worksheet.write(current_row, col, 'Total', table_header_format)
 
-            # Set taller row height for wrapped header text
             worksheet.set_row(current_row, 40)
             current_row += 1
 
@@ -804,7 +787,6 @@ def export_summary_excel():
                         worksheet.write(current_row, col, '', data_format)
                     col += 1
 
-                # Class total
                 class_total = data['class_totals'][cls['id']]
                 if class_total > 0:
                     worksheet.write(current_row, col, class_total, data_format)
@@ -823,18 +805,13 @@ def export_summary_excel():
                     worksheet.write(current_row, col, '', total_row_format)
                 col += 1
 
-            # Grand total
             grand_total = sum(data['item_totals'].values())
             worksheet.write(current_row, col, grand_total, grand_total_format)
-            current_row += 3  # Add spacing between days
+            current_row += 3
 
-    # Close workbook
     workbook.close()
-
-    # Prepare the file for download
     output.seek(0)
 
-    # Generate filename with date
     filename = f'lunch_summary_week_{week_number}_{start_date.strftime("%Y-%m-%d")}.xlsx'
 
     return send_file(
@@ -843,6 +820,8 @@ def export_summary_excel():
         as_attachment=True,
         download_name=filename
     )
+
+
 # ==================== APPLICATION STARTUP ====================
 if __name__ == '__main__':
     print(f"Using database at: {os.path.abspath(DB_PATH)}")
@@ -850,12 +829,12 @@ if __name__ == '__main__':
     if not os.path.exists(DB_PATH):
         print(f"Database not found! Creating new database at: {DB_PATH}")
         init_db()
-        print('Created menu_selection.db with all tables.')
+        print(' Created menu_selection.db with all tables.')
     else:
-        print("Database found successfully!")
+        print(" Database found successfully!")
 
     print(" School Lunch Choice System")
-    print(f"Access via: http://support-sab:5000/")
-    print(f"Or via:     http://localhost:5000/")
+    print(f" Access via: http://localhost:5000/")
+    print(" Week cycles must be manually added to database")
 
     app.run(host="0.0.0.0", port=5000, debug=True)

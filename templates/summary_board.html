@@ -25,20 +25,32 @@
 
         <!-- WEEK NAVIGATION BUTTONS -->
         <div class="week-navigation">
+            {% if has_previous_week %}
             <a href="{{ url_for('summary_board', week=previous_week) }}"
                class="week-nav-btn week-nav-prev">
                 <span class="arrow">←</span> Previous Week
             </a>
+            {% else %}
+            <button class="week-nav-btn week-nav-prev" disabled style="opacity: 0.4; cursor: not-allowed;">
+                <span class="arrow">←</span> No Previous Week
+            </button>
+            {% endif %}
 
             <a href="{{ url_for('summary_board', week=current_week) }}"
                class="week-nav-btn week-nav-current {% if selected_week == current_week %}active{% endif %}">
                 This Week
             </a>
 
+            {% if has_next_week %}
             <a href="{{ url_for('summary_board', week=next_week) }}"
                class="week-nav-btn week-nav-next">
                 Next Week <span class="arrow">→</span>
             </a>
+            {% else %}
+            <button class="week-nav-btn week-nav-next" disabled style="opacity: 0.4; cursor: not-allowed;">
+                No Next Week <span class="arrow">→</span>
+            </button>
+            {% endif %}
         </div>
 
         <!-- WEEK DROPDOWN -->
