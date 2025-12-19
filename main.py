@@ -10,7 +10,6 @@ DB_PATH = 'menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'menu-app-key'
 
-
 # ==================== DATABASE HELPERS ====================
 def get_db_connection():
     """Get database connection with Row factory enabled"""
@@ -18,7 +17,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 
 def init_db():
     """Create all tables on first run"""
@@ -82,11 +80,10 @@ def init_db():
         # Add packed_lunch column if it doesn't exist (for existing databases)
         try:
             conn.execute("ALTER TABLE Week_Cycle ADD COLUMN packed_lunch TEXT DEFAULT ''")
-            print("✅ Added packed_lunch column to Week_Cycle table")
+            print("✓ Added packed_lunch column to Week_Cycle table")
         except sqlite3.OperationalError:
             # Column already exists
             pass
-
 
 # ==================== DATA RETRIEVAL ====================
 def get_classes():
@@ -94,12 +91,10 @@ def get_classes():
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
-
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
-
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -115,7 +110,6 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
-
 def get_students_by_class(class_id):
     """Get students for a class, sorted by last name"""
     with get_db_connection() as conn:
@@ -123,7 +117,6 @@ def get_students_by_class(class_id):
             'SELECT * FROM Student WHERE class_id = ? ORDER BY last_name, first_name',
             (class_id,)
         ).fetchall()
-
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all student choices for a specific class and week"""
@@ -156,7 +149,6 @@ def get_week_choices_by_class(class_id, week_number, year):
                 student_choices[student_id]['choices'][choice['day_of_week']] = choice['menu_item_id']
 
         return student_choices
-
 
 def get_daily_breakdown_by_class(start_date):
     """Get complete breakdown of choices by day, class, and menu item"""
@@ -234,7 +226,6 @@ def get_daily_breakdown_by_class(start_date):
 
         return daily_data
 
-
 # ==================== SAVE OPERATIONS ====================
 def save_choice(student_id, menu_item_id, class_id, date_str):
     """Save or update a student's lunch choice"""
@@ -264,7 +255,6 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
     except Exception as e:
         print(f"Database error: {e}")
         return False
-
 
 # ==================== WEEK CYCLE MANAGEMENT ====================
 def get_available_weeks():
@@ -297,7 +287,6 @@ def get_available_weeks():
 
         return formatted_weeks
 
-
 def ensure_week_cycles_exist():
     """
     Check if weeks exist, but DON'T auto-generate.
@@ -305,7 +294,6 @@ def ensure_week_cycles_exist():
     """
     # Do nothing - weeks are managed manually in database
     pass
-
 
 def week_exists(week_monday_str):
     """Check if a week exists in the database"""
@@ -321,14 +309,12 @@ def week_exists(week_monday_str):
 
         return result is not None
 
-
 def get_current_week_monday():
     """Get Monday of current week"""
     today = datetime.now().date()
     days_since_monday = today.weekday()
     current_monday = today - timedelta(days=days_since_monday)
     return current_monday.strftime('%Y-%m-%d')
-
 
 def get_next_week_monday():
     """Get Monday of next week"""
@@ -337,7 +323,6 @@ def get_next_week_monday():
     this_monday = today - timedelta(days=days_since_monday)
     next_monday = this_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
-
 
 def get_week_cycle(date_str):
     """Get week cycle number for a specific date"""
@@ -358,7 +343,6 @@ def get_week_cycle(date_str):
             # Fallback calculation
             return ((week_number - 1) % 3) + 1
 
-
 def is_week_editable(selected_week_str):
     """
     Check if a week is editable.
@@ -374,7 +358,6 @@ def is_week_editable(selected_week_str):
 
     # Only allow editing for weeks that haven't started yet
     return selected_monday > current_monday
-
 
 def is_packed_lunch_day(week_number, year, day_of_week):
     """
@@ -417,7 +400,6 @@ def is_packed_lunch_day(week_number, year, day_of_week):
         # Week doesn't exist in database
         return False
 
-
 def get_packed_lunch_days(week_number, year):
     """
     Get list of packed lunch days for a week.
@@ -437,13 +419,11 @@ def get_packed_lunch_days(week_number, year):
 
     return packed_days
 
-
 def get_previous_week_monday(current_week_str):
     """Get Monday of the previous week"""
     current_monday = datetime.strptime(current_week_str, '%Y-%m-%d')
     previous_monday = current_monday - timedelta(days=7)
     return previous_monday.strftime('%Y-%m-%d')
-
 
 def get_next_week_monday_from_date(current_week_str):
     """Get Monday of the next week from a given date"""
@@ -451,13 +431,11 @@ def get_next_week_monday_from_date(current_week_str):
     next_monday = current_monday + timedelta(days=7)
     return next_monday.strftime('%Y-%m-%d')
 
-
 # ==================== ROUTES ====================
 @app.route('/')
 def index():
     """Home page with class selection"""
     return render_template('index.html', classes=get_classes())
-
 
 @app.route('/teacher_menu/<int:class_id>')
 def teacher_menu(class_id):
@@ -534,7 +512,6 @@ def teacher_menu(class_id):
         has_next_week=has_next_week
     )
 
-
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
     """API endpoint for auto-saving lunch choices"""
@@ -573,7 +550,6 @@ def auto_save():
     except Exception as e:
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @app.route('/summary')
 def summary_board():
@@ -627,7 +603,6 @@ def summary_board():
         has_previous_week=has_previous_week,
         has_next_week=has_next_week
     )
-
 
 @app.route('/export_summary_excel')
 def export_summary_excel():
@@ -821,7 +796,6 @@ def export_summary_excel():
         download_name=filename
     )
 
-
 # ==================== APPLICATION STARTUP ====================
 if __name__ == '__main__':
     print(f"Using database at: {os.path.abspath(DB_PATH)}")
@@ -829,12 +803,12 @@ if __name__ == '__main__':
     if not os.path.exists(DB_PATH):
         print(f"Database not found! Creating new database at: {DB_PATH}")
         init_db()
-        print(' Created menu_selection.db with all tables.')
+        print('✓ Created menu_selection.db with all tables.')
     else:
-        print(" Database found successfully!")
+        print("✓ Database found successfully!")
 
     print(" School Lunch Choice System")
-    print(f" Access via: http://localhost:5000/")
+    print(f" Access via: http://support-sab:5000/")
     print(" Week cycles must be manually added to database")
 
     app.run(host="0.0.0.0", port=5000, debug=True)

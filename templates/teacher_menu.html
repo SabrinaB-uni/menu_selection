@@ -40,9 +40,9 @@
                 <span class="arrow">←</span> Previous Week
             </a>
             {% else %}
-            <button class="week-nav-btn week-nav-prev" disabled style="opacity: 0.4; cursor: not-allowed;">
-                <span class="arrow">←</span> No Previous Week
-            </button>
+            <div class="week-message week-message-start">
+                ← This is the first week available
+            </div>
             {% endif %}
 
             <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=current_week) }}"
@@ -56,9 +56,9 @@
                 Next Week <span class="arrow">→</span>
             </a>
             {% else %}
-            <button class="week-nav-btn week-nav-next" disabled style="opacity: 0.4; cursor: not-allowed;">
-                No Next Week <span class="arrow">→</span>
-            </button>
+            <div class="week-message week-message-end">
+                This is the last week available →
+            </div>
             {% endif %}
         </div>
 
