@@ -14,7 +14,7 @@ body {
 .container {
     max-width: 1400px;
     margin: auto;
-    padding: 38px;
+    padding: 28px;
 }
 
 .header-bar {
@@ -22,9 +22,9 @@ body {
     align-items: center;
     justify-content: space-between;
     background: white;
-    padding: 12px 18px;
+    padding: 42px 38px;
     border-radius: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 52px;
 }
 
 h1 {
@@ -137,7 +137,7 @@ button:hover {
 }
 
 .lunch-table th {
-    padding: 7px;
+    padding: 27px;
     text-align: center;
     font-size: 13px;
 }
@@ -182,7 +182,7 @@ button:hover {
 }
 
 .footer {
-    margin-top: 20px;
+    margin-top: 50px;
     text-align: center;
     font-size: 12px;
     color: #777;
