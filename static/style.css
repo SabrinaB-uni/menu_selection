@@ -1,912 +1,260 @@
-/* ==================== GLOBAL STYLES ==================== */
+
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    font-family: "Segoe UI", Arial, sans-serif;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-    padding: 20px;
-    line-height: 1.6;
+    background: #f5f7fa;
+    color: #222;
 }
 
 .container {
     max-width: 1400px;
-    margin: 0 auto;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    margin: auto;
+    padding: 18px;
 }
 
-/* ==================== HEADER STYLES ==================== */
-.header {
-    text-align: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    padding-top: 60px;
-    border-bottom: 3px solid #2c3e50;
-    position: relative;
-}
-
-.header h1 {
-    color: #2c3e50;
-    font-size: 2.5em;
-    margin-bottom: 10px;
-    font-weight: 700;
-}
-
-.header h2 {
-    color: #7f8c8d;
-    font-size: 1.3em;
-    font-weight: 400;
-}
-
-.header-nav {
-    position: absolute;
-    top: 15px;
-    right: 25px;
-    margin: 0;
-}
-
-/* Left-aligned header navigation */
-.header-nav-left {
-    left: 15px;
-    right: auto;
-}
-
-.nav-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #34495e;
-    color: white !important;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.nav-btn:hover {
-    background-color: #2c3e50;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
-}
-
-
-/* ==================== EXPORT CSV BUTTON IN HEADER ==================== */
-.export-csv-btn {
-    background: white !important;
-    color: #27ae60 !important;
-    border: 2px solid #27ae60 !important;
-    margin-right: 10px;
-}
-
-.export-csv-btn:hover {
-    background: #27ae60 !important;
-    color: white !important;
-    border: 2px solid #1e8449 !important;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3) !important;
-}
-/* ==================== FLASH MESSAGES ==================== */
-.flash-messages {
-    margin: 20px 0;
-}
-
-.flash {
-    padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    font-weight: 500;
-}
-
-.flash-success {
-    background-color: #d5e8d4;
-    color: #2d5016;
-    border: 1px solid #b7d7a8;
-}
-
-.flash-error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-.flash-info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
-}
-
-/* ==================== SAVE STATUS ==================== */
-.save-status {
-    display: none;
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    border-radius: 8px;
-    font-weight: 600;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.save-status.success {
-    background-color: #6b8e65;
-    color: white;
-}
-
-.save-status.error {
-    background-color: #c7511f;
-    color: white;
-}
-
-.save-status.saving {
-    background-color: #e8a648;
-    color: #333;
-}
-
-/* ==================== WEEK NAVIGATION BUTTONS ==================== */
-.week-navigation {
+.header-bar {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 15px;
-    margin: 25px 0;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    border: 2px solid #dee2e6;
+    justify-content: space-between;
+    background: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 12px;
 }
 
-.week-nav-btn {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
+h1 {
+    font-size: 26px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 16px;
+    text-align: center;
+    font-weight: 500;
+    color: #555;
+}
+
+.nav-btn,
+.week-nav-btn,
+button {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
     text-decoration: none;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.95em;
-    border: 2px solid transparent;
+}
+
+.nav-btn:hover,
+.week-nav-btn:hover,
+button:hover {
+    opacity: 0.9;
+}
+
+.week-nav-current {
+    background: #6c8f6a;
 }
 
 .week-nav-prev,
 .week-nav-next {
-    background-color: #6c757d;
-    color: white !important;
+    background: #6c757d;
 }
 
-.week-nav-prev:hover,
-.week-nav-next:hover {
-    background-color: #5a6268;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
 }
 
-.week-nav-current {
-    background-color: #6b8e65;
-    color: white !important;
-    font-size: 1.05em;
-    padding: 14px 28px;
-}
-
-.week-nav-current:hover {
-    background-color: #5a7a55;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(107, 142, 101, 0.3);
-}
-
-.week-nav-current.active {
-    background-color: #34495e;
-    border-color: #2c3e50;
-    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.2);
-}
-
-.week-nav-btn .arrow {
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
-/* ==================== WEEK SELECTOR ==================== */
-.week-selector {
-    margin: 15px 0;
-    padding: 12px;
-    background-color: #fff;
-    border-radius: 6px;
+.class-card {
+    background: linear-gradient(#33495f, #2c3e50);
+    color: white;
+    padding: 40px 20px;
     text-align: center;
-    border: 1px solid #dee2e6;
-}
-
-.week-selector label {
-    font-weight: 600;
-    margin-right: 10px;
-    font-size: 0.9em;
-    color: #6c757d;
-}
-
-.week-selector select {
-    padding: 8px 12px;
-    border: 2px solid #ced4da;
-    border-radius: 6px;
-    font-size: 0.85em;
-    min-width: 350px;
-    cursor: pointer;
-    background-color: white;
-    transition: all 0.3s ease;
-    color: #495057;
-}
-
-.week-selector select:hover {
-    border-color: #34495e;
-}
-
-.week-selector select:focus {
-    outline: none;
-    border-color: #34495e;
-    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.1);
-}
-
-/* ==================== WEEK INFO ==================== */
-.week-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    margin: 20px 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border: 1px solid #dee2e6;
+    font-size: 20px;
+    border-radius: 14px;
+    text-decoration: none;
 }
 
 .week-cycle {
-    font-size: 1.3em;
-    font-weight: bold;
-    color: #fff;
-    padding: 10px 20px;
-    background-color: #6b8e65;
-    border-radius: 25px;
-    box-shadow: 0 2px 6px rgba(107, 142, 101, 0.25);
-}
-
-.week-number {
-    font-size: 1.1em;
+    background: #6c8f6a;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 18px;
+    font-size: 13px;
     font-weight: 600;
-    color: #495057;
-    padding: 8px 16px;
-    background-color: #e9ecef;
-    border-radius: 20px;
-    border: 2px solid #ced4da;
 }
 
-.week-date-range {
-    font-size: 1.1em;
+#duplicate-btn {
+    background: #6f2da8;
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 6px;
     font-weight: 600;
-    color: #495057;
-    padding: 8px 16px;
-    background-color: #fff;
-    border-radius: 20px;
-    border: 2px solid #dee2e6;
 }
 
-/* Week Info Status States */
-
-/* Past weeks - Gray */
-.week-info.read-only {
-    background-color: #f1f3f5;
-    border: 2px solid #adb5bd;
+#duplicate-btn:hover {
+    background: #5a2191;
 }
 
-.week-info.read-only .week-cycle {
-    background-color: #6c757d;
+.duplicate-status {
+    margin-top: 6px;
+    font-size: 12px;
+    color: green;
 }
 
-/* Current week - Green */
-.week-info.current {
-    background-color: #eef5ed;
-    border: 2px solid #9fb89a;
+.week-selector {
+    margin: 8px 0 12px 0;
+    font-size: 13px;
 }
 
-.week-info.current .week-cycle {
-    background-color: #6b8e65;
-    box-shadow: 0 2px 6px rgba(107, 142, 101, 0.25);
+.week-selector select {
+    height: 28px;
+    font-size: 12px;
 }
 
-/* Future weeks - Blue */
-.week-info.future {
-    background-color: #e8f4f8;
-    border: 2px solid #7ec8e3;
-}
-
-.week-info.future .week-cycle {
-    background-color: #3498db;
-    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.25);
-}
-
-/* ==================== WEEK WARNING BANNER ==================== */
-.week-warning {
-    background-color: #fff9e6;
-    border: 2px solid #e8a648;
-    border-radius: 8px;
-    padding: 15px 20px;
-    margin: 20px 0;
-    text-align: center;
-    font-size: 1.05em;
-    color: #856404;
-    box-shadow: 0 2px 8px rgba(232, 166, 72, 0.15);
-}
-
-.week-warning strong {
-    color: #c7511f;
-}
-
-/* ==================== CLASS GRID (HOME PAGE) ==================== */
-.class-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin: 30px 0;
-}
-
-/* Target the link itself when it has class-card class */
-a.class-card {
-    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-    padding: 30px;
-    border-radius: 12px;
-    text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-    display: block;
-}
-
-a.class-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
-/* white color on all link states */
-a.class-card,
-a.class-card:link,
-a.class-card:visited,
-a.class-card:hover,
-a.class-card:active {
-    color: white !important;
-}
-
-/* white on all child elements too */
-a.class-card h3,
-a.class-card span,
-a.class-card * {
-    color: white !important;
-}
-
-a.class-card h3 {
-    font-size: 1.5em;
-    font-weight: 700;
-    margin: 0 0 10px 0;
-}
-
-a.class-card .arrow {
-    font-size: 1.2em;
-    display: inline-block;
-}
-
-/* ==================== LUNCH TABLE ==================== */
 .lunch-table-container {
+    margin-top: 12px;
     overflow-x: auto;
-    margin: 20px 0;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .lunch-table {
     width: 100%;
     border-collapse: collapse;
-    background-color: white;
-    min-width: 800px;
+    font-size: 13px;
 }
 
-.lunch-table thead {
-    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+.lunch-table thead tr {
+    background: #2c3e50;
     color: white;
 }
 
 .lunch-table th {
-    padding: 15px 10px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.95em;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: white;
-}
-
-.lunch-table .student-column {
-    min-width: 200px;
-    position: sticky;
-    left: 0;
-    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-    z-index: 10;
-}
-
-.lunch-table .day-column {
+    padding: 7px;
     text-align: center;
-    min-width: 150px;
+    font-size: 13px;
 }
 
-.lunch-table .day-date {
-    font-size: 0.85em;
-    font-weight: 400;
-    opacity: 0.9;
+.day-date {
+    font-size: 11px;
 }
 
-.lunch-table tbody tr {
-    border-bottom: 1px solid #e9ecef;
-    transition: background-color 0.2s ease;
+.lunch-table td {
+    padding: 6px 6px;
+    border-bottom: 1px solid #ddd;
 }
 
-.lunch-table tbody tr:hover {
-    background-color: #f8f9fa;
+.lunch-table tr:nth-child(even) {
+    background: #f2f4f7;
 }
 
-.lunch-table .student-name {
-    font-weight: 600;
-    padding: 15px;
-    background-color: #f8f9fa;
-    position: sticky;
-    left: 0;
-    z-index: 5;
-    color: #495057;
+.student-name {
+    white-space: nowrap;
+    font-size: 13px;
+    padding-left: 8px;
 }
 
-.lunch-table .menu-cell {
-    padding: 10px;
-    text-align: center;
-}
-
-/* ==================== MENU SELECT DROPDOWN ==================== */
 .menu-select {
     width: 100%;
-    padding: 8px;
-    border: 2px solid #ced4da;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: white;
-    transition: all 0.3s ease;
-    color: #495057;
+    height: 28px;
+    font-size: 12px;
+    padding: 3px 6px;
 }
 
-.menu-select:hover {
-    border-color: #34495e;
-}
-
-.menu-select:focus {
-    outline: none;
-    border-color: #34495e;
-    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.1);
-}
-
-.menu-select option {
-    padding: 10px;
-    color: #495057;
-}
-
-/* ==================== READ-ONLY MENU CELL ==================== */
 .menu-readonly {
-    padding: 10px;
-    background-color: #f1f3f5;
-    border-radius: 4px;
-    text-align: center;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: not-allowed;
-    user-select: none;
-    border: 1px solid #dee2e6;
-}
-
-.menu-readonly .readonly-choice {
-    color: #495057;
-    font-weight: 500;
-}
-
-.menu-readonly .no-choice {
-    color: #adb5bd;
-    font-style: italic;
-    font-size: 0.9em;
-}
-
-/* ==================== SUMMARY DASHBOARD STYLES ==================== */
-.daily-summaries {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-    margin: 30px 0;
-}
-
-.daily-summary {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    background-color: #fafbfc;
-    overflow-x: auto;
-    width: 100%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.daily-summary h3 {
-    margin: 0 0 15px 0;
-    color: #2c3e50;
-    border-bottom: 2px solid #6b8e65;
-    padding-bottom: 8px;
-    font-size: 1.2em;
-    text-align: center;
-}
-
-/* ==================== MATRIX TABLE (SUMMARY) ==================== */
-.matrix-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9em;
-    min-width: 400px;
-    background-color: white;
-}
-
-.matrix-table th,
-.matrix-table td {
-    border: 1px solid #dee2e6;
-    padding: 10px 8px;
-    text-align: center;
-}
-
-.matrix-table th {
-    background-color: #f1f3f5;
-    color: #495057;
-    font-size: 0.85em;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.matrix-table .class-name {
-    background-color: #f8f9fa;
-    font-weight: bold;
-    text-align: left;
-    padding-left: 15px;
-    color: #495057;
-}
-
-.matrix-table .total-row {
-    background-color: #eef5ed;
-    font-weight: bold;
-    border-top: 2px solid #9fb89a;
-}
-
-.matrix-table .total-col {
-    background-color: #eef5ed;
-    font-weight: bold;
-    border-left: 2px solid #9fb89a;
-}
-
-.matrix-table .grand-total {
-    background-color: #dcebd9;
-    font-weight: bold;
-    border-top: 2px solid #9fb89a;
-    border-left: 2px solid #9fb89a;
-    font-size: 1.1em;
-    color: #2d5016;
-}
-
-.matrix-table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-/* ==================== NO SELECTIONS MESSAGE ==================== */
-.no-selections {
-    text-align: center;
-    color: #6c757d;
-    font-style: italic;
-    padding: 40px;
-    font-size: 1.1em;
-    background-color: #fff;
-    border-radius: 4px;
-}
-
-/* ==================== PRINT STYLES ==================== */
-@media print {
-    body {
-        background: white;
-        padding: 0;
-    }
-
-    .week-selector,
-    .week-navigation,
-    .header-nav,
-    .save-status {
-        display: none !important;
-    }
-    .container {
-        box-shadow: none;
-        padding: 20px;
-    }
-
-    .daily-summary {
-        page-break-inside: avoid;
-        margin-bottom: 20px;
-        box-shadow: none;
-        border: 1px solid #000;
-    }
-
-    .matrix-table {
-        font-size: 0.8em;
-    }
-
-    .week-info {
-        border: 1px solid #000;
-        margin-bottom: 20px;
-        background: white !important;
-    }
-
-    .lunch-table thead {
-        background: #333 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-}
-
-/* ==================== RESPONSIVE DESIGN ==================== */
-@media (max-width: 768px) {
-    .container {
-        padding: 15px;
-    }
-
-    .header {
-        padding-top: 50px;
-    }
-
-    .header h1 {
-        font-size: 1.8em;
-    }
-
-    .header h2 {
-        font-size: 1em;
-    }
-
-    .header-nav {
-        top: 10px;
-        right: 10px;
-    }
-
-    .nav-btn {
-        padding: 8px 15px;
-        font-size: 0.9em;
-    }
-
-    .export-csv-btn {
-        margin-left: 5px;
-        padding: 8px 12px;
-        font-size: 0.85em;
-    }
-
-    .week-navigation {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .week-nav-btn {
-        width: 100%;
-        justify-content: center;
-        padding: 12px 20px;
-    }
-
-    .week-selector select {
-        min-width: 100%;
-        font-size: 12px;
-    }
-
-    .lunch-table {
-        font-size: 0.85em;
-    }
-
-    .lunch-table th,
-    .lunch-table td {
-        padding: 8px 5px;
-    }
-
-    .class-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .week-info {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .matrix-table {
-        font-size: 0.8em;
-    }
-}
-
-@media (max-width: 480px) {
-    .header h1 {
-        font-size: 1.5em;
-    }
-
-    .week-cycle,
-    .week-number,
-    .week-date-range {
-        font-size: 0.9em;
-        padding: 8px 15px;
-    }
-
-    .header-nav {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        position: static;
-        margin-top: 15px;
-    }
-
-    .nav-btn,
-    .export-csv-btn {
-        margin: 0 !important;
-        width: 100%;
-        text-align: center;
-    }
-}
-
-/* ==================== UTILITY CLASSES ==================== */
-.text-center {
-    text-align: center;
-}
-
-.text-muted {
-    color: #6c757d;
-}
-
-.mt-20 {
-    margin-top: 20px;
-}
-
-.mb-20 {
-    margin-bottom: 20px;
-}
-
-.p-20 {
-    padding: 20px;
-}
-
-/* ==================== PACKED LUNCH DAY STYLING ==================== */
-
-/* Header for packed lunch days - STRONG ORANGE/YELLOW */
-.packed-lunch-day-header {
-    background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%) !important;
-    color: white !important;
-}
-
-.packed-lunch-day-header .day-date {
-    color: white !important;
-    opacity: 0.95;
+    font-size: 12px;
+    padding: 5px 6px;
 }
 
 .packed-lunch-badge {
-    background-color: #ffffff;
-    color: #ff6600;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.7em;
-    font-weight: 700;
-    margin-top: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-/* Cell - Light yellow background ONLY when selection made on packed lunch day */
-.packed-lunch-day-cell {
-    background-color: #fff3cd;
-    border-left: 3px solid #ffa500;
-}
-
-/* Dropdown - Bright yellow */
-.packed-lunch-day-select {
-    background-color: #ffeb3b;
-    border: 2px solid #ff9800;
-    font-weight: 600;
-}
-
-.packed-lunch-day-select:focus {
-    background-color: #ffeb3b;
-    border-color: #ff6600;
-    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.3);
-}
-
-/* Read-only - Yellow */
-.packed-lunch-day-readonly {
-    background-color: #ffeb3b;
-    border: 2px solid #ff9800;
-    padding: 8px;
-    border-radius: 4px;
-}
-
-.packed-lunch-day-readonly .readonly-choice {
-    color: #333;
-    font-weight: 600;
-}
-
-/* Summary board - Light yellow background with orange border */
-.packed-lunch-day-summary {
-    background-color: #fff9e6;
-    border-left: 5px solid #ffa500;
-    border-top: 2px solid #ffa500;
-    border-bottom: 2px solid #ffa500;
-}
-
-.packed-lunch-summary-badge {
-    background: linear-gradient(135deg, #ff8c00 0%, #ff6600 100%);
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #999;
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.85em;
-    font-weight: 700;
-    box-shadow: 0 2px 6px rgba(255, 140, 0, 0.4);
+    border-radius: 10px;
 }
-/* ==================== WEEK END MESSAGES ==================== */
 
-.week-message {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
+
+.footer {
+    margin-top: 20px;
     text-align: center;
+    font-size: 12px;
+    color: #777;
+}
+
+body {
+    background: white;
+}
+
+.teacher-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.teacher-title {
+    text-align: center;
+}
+
+.teacher-title h1 {
+    font-size: 26px;
+    margin-bottom: 2px;
+}
+
+.teacher-title h2 {
+    font-size: 16px;
+    font-weight: normal;
+    color: #555;
+}
+
+.teacher-left {
+    justify-self: start;
+}
+
+.teacher-right {
+    justify-self: end;
+}
+
+.container,
+.lunch-table-container {
+    background: white;
+}
+
+.teacher-header {
+    margin-bottom: 20px;
+}
+
+.week-selector {
+    margin-top: 18px;
+}
+
+.lunch-table-container {
+    margin-top: 22px;
+}
+
+.week-navigation,
+.top-bar {
+    margin-top: 14px;
+}
+
+.week-warning {
+    background: #fff3b0;
+    border: 1px solid #e0c96f;
+    color: #5a4a00;
+    padding: 8px 14px;
+    border-radius: 20px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.95em;
-    border: 2px solid #dee2e6;
-    background-color: #f8f9fa;
-    color: #6c757d;
-}
-
-.week-message-start {
-    background-color: #fff3cd;
-    color: #856404;
-    border-color: #ffc107;
-}
-
-.week-message-end {
-    background-color: #fff3cd;
-    color: #856404;
-    border-color: #ffc107;
-}
-
-/* Alternative style - Info blue message */
-.week-message-info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border-color: #17a2b8;
-}
-
-/* Responsive sizing */
-@media (max-width: 768px) {
-    .week-message {
-        font-size: 0.85em;
-        padding: 10px 20px;
-    }
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 10px;
 }

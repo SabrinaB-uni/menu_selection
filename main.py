@@ -10,6 +10,7 @@ DB_PATH = 'menu_selection.db'
 app = Flask(__name__)
 app.secret_key = 'menu-app-key'
 
+
 # ==================== DATABASE HELPERS ====================
 def get_db_connection():
     """Get database connection with Row factory enabled"""
@@ -17,6 +18,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
 
 def init_db():
     """Create all tables on first run"""
@@ -85,16 +87,19 @@ def init_db():
             # Column already exists
             pass
 
+
 # ==================== DATA RETRIEVAL ====================
 def get_classes():
     """Get all classes sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
+
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
         return conn.execute('SELECT * FROM Menu_Items ORDER BY item_name').fetchall()
+
 
 def get_menu_items_for_day(day_of_week, week_cycle=1):
     """Get menu items available for a specific day and cycle"""
@@ -110,6 +115,7 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
         """
         return conn.execute(query).fetchall()
 
+
 def get_students_by_class(class_id):
     """Get students for a class, sorted by last name"""
     with get_db_connection() as conn:
@@ -117,6 +123,7 @@ def get_students_by_class(class_id):
             'SELECT * FROM Student WHERE class_id = ? ORDER BY last_name, first_name',
             (class_id,)
         ).fetchall()
+
 
 def get_week_choices_by_class(class_id, week_number, year):
     """Get all student choices for a specific class and week"""
@@ -149,6 +156,7 @@ def get_week_choices_by_class(class_id, week_number, year):
                 student_choices[student_id]['choices'][choice['day_of_week']] = choice['menu_item_id']
 
         return student_choices
+
 
 def get_daily_breakdown_by_class(start_date):
     """Get complete breakdown of choices by day, class, and menu item"""
@@ -226,6 +234,7 @@ def get_daily_breakdown_by_class(start_date):
 
         return daily_data
 
+
 # ==================== SAVE OPERATIONS ====================
 def save_choice(student_id, menu_item_id, class_id, date_str):
     """Save or update a student's lunch choice"""
@@ -255,6 +264,7 @@ def save_choice(student_id, menu_item_id, class_id, date_str):
     except Exception as e:
         print(f"Database error: {e}")
         return False
+
 
 # ==================== WEEK CYCLE MANAGEMENT ====================
 def get_available_weeks():
@@ -287,6 +297,7 @@ def get_available_weeks():
 
         return formatted_weeks
 
+
 def ensure_week_cycles_exist():
     """
     Check if weeks exist, but DON'T auto-generate.
@@ -294,6 +305,7 @@ def ensure_week_cycles_exist():
     """
     # Do nothing - weeks are managed manually in database
     pass
+
 
 def week_exists(week_monday_str):
     """Check if a week exists in the database"""
@@ -309,6 +321,7 @@ def week_exists(week_monday_str):
 
         return result is not None
 
+
 def get_current_week_monday():
     """Get Monday of current week"""
     today = datetime.now().date()
@@ -316,16 +329,40 @@ def get_current_week_monday():
     current_monday = today - timedelta(days=days_since_monday)
     return current_monday.strftime('%Y-%m-%d')
 
+
 def get_next_week_monday():
-    """Get Monday of next week"""
+    """
+    Get Monday of next week - looks for the NEXT week that exists in database.
+    If current week doesn't exist, finds the nearest future week.
+    """
     today = datetime.now().date()
     days_since_monday = today.weekday()
     this_monday = today - timedelta(days=days_since_monday)
-    next_monday = this_monday + timedelta(days=7)
-    return next_monday.strftime('%Y-%m-%d')
+
+    with get_db_connection() as conn:
+        # Find the next week that exists in the database after this Monday
+        result = conn.execute("""
+            SELECT week_number, year
+            FROM Week_Cycle
+            WHERE year > ? OR (year = ? AND week_number >= ?)
+            ORDER BY year ASC, week_number ASC
+            LIMIT 1
+        """, (this_monday.year, this_monday.year, this_monday.isocalendar()[1])).fetchone()
+
+        if result:
+            # Calculate Monday for this week number
+            jan_4 = datetime(result['year'], 1, 4)
+            week_1_monday = jan_4 - timedelta(days=jan_4.weekday())
+            target_monday = week_1_monday + timedelta(weeks=result['week_number'] - 1)
+            return target_monday.strftime('%Y-%m-%d')
+        else:
+            # Fallback: just add 7 days
+            next_monday = this_monday + timedelta(days=7)
+            return next_monday.strftime('%Y-%m-%d')
+
 
 def get_week_cycle(date_str):
-    """Get week cycle number for a specific date"""
+    """Get week cycle number for a specific date - Returns None if week doesn't exist"""
     date = datetime.strptime(date_str, '%Y-%m-%d')
     week_number = date.isocalendar()[1]
     year = date.year
@@ -340,8 +377,9 @@ def get_week_cycle(date_str):
         if result:
             return result['cycle_number']
         else:
-            # Fallback calculation
-            return ((week_number - 1) % 3) + 1
+            # Return None instead of fallback calculation
+            return None
+
 
 def is_week_editable(selected_week_str):
     """
@@ -358,6 +396,7 @@ def is_week_editable(selected_week_str):
 
     # Only allow editing for weeks that haven't started yet
     return selected_monday > current_monday
+
 
 def is_packed_lunch_day(week_number, year, day_of_week):
     """
@@ -400,6 +439,7 @@ def is_packed_lunch_day(week_number, year, day_of_week):
         # Week doesn't exist in database
         return False
 
+
 def get_packed_lunch_days(week_number, year):
     """
     Get list of packed lunch days for a week.
@@ -419,23 +459,146 @@ def get_packed_lunch_days(week_number, year):
 
     return packed_days
 
+
 def get_previous_week_monday(current_week_str):
-    """Get Monday of the previous week"""
-    current_monday = datetime.strptime(current_week_str, '%Y-%m-%d')
-    previous_monday = current_monday - timedelta(days=7)
-    return previous_monday.strftime('%Y-%m-%d')
+    """
+    Get Monday of the previous week that EXISTS in database (skipping gaps).
+    """
+    current_date = datetime.strptime(current_week_str, '%Y-%m-%d').date()
+    current_week_num = current_date.isocalendar()[1]
+    current_year = current_date.year
+
+    with get_db_connection() as conn:
+        # Find the most recent week before current week
+        result = conn.execute("""
+            SELECT week_number, year
+            FROM Week_Cycle
+            WHERE year < ? OR (year = ? AND week_number < ?)
+            ORDER BY year DESC, week_number DESC
+            LIMIT 1
+        """, (current_year, current_year, current_week_num)).fetchone()
+
+        if result:
+            # Calculate Monday for this week number
+            jan_4 = datetime(result['year'], 1, 4)
+            week_1_monday = jan_4 - timedelta(days=jan_4.weekday())
+            target_monday = week_1_monday + timedelta(weeks=result['week_number'] - 1)
+            return target_monday.strftime('%Y-%m-%d')
+        else:
+            # Fallback: just subtract 7 days
+            previous_monday = current_date - timedelta(days=7)
+            return previous_monday.strftime('%Y-%m-%d')
+
 
 def get_next_week_monday_from_date(current_week_str):
-    """Get Monday of the next week from a given date"""
-    current_monday = datetime.strptime(current_week_str, '%Y-%m-%d')
-    next_monday = current_monday + timedelta(days=7)
-    return next_monday.strftime('%Y-%m-%d')
+    """
+    Get Monday of the next week that EXISTS in database after given date (skipping gaps).
+    """
+    current_date = datetime.strptime(current_week_str, '%Y-%m-%d').date()
+    current_week_num = current_date.isocalendar()[1]
+    current_year = current_date.year
+
+    with get_db_connection() as conn:
+        # Find the next week after current week
+        result = conn.execute("""
+            SELECT week_number, year
+            FROM Week_Cycle
+            WHERE year > ? OR (year = ? AND week_number > ?)
+            ORDER BY year ASC, week_number ASC
+            LIMIT 1
+        """, (current_year, current_year, current_week_num)).fetchone()
+
+        if result:
+            # Calculate Monday for this week number
+            jan_4 = datetime(result['year'], 1, 4)
+            week_1_monday = jan_4 - timedelta(days=jan_4.weekday())
+            target_monday = week_1_monday + timedelta(weeks=result['week_number'] - 1)
+            return target_monday.strftime('%Y-%m-%d')
+        else:
+            # Fallback: just add 7 days
+            next_monday = current_date + timedelta(days=7)
+            return next_monday.strftime('%Y-%m-%d')
+
+
+def get_previous_cycle_week(class_id, week_number, year):
+    """
+    Find the most recent occurrence of the same week cycle for a class.
+    Returns (previous_week_number, previous_year) or (None, None) if not found.
+    """
+    with get_db_connection() as conn:
+        # Get current week's cycle number
+        current_cycle = conn.execute("""
+            SELECT cycle_number FROM Week_Cycle 
+            WHERE week_number = ? AND year = ?
+        """, (week_number, year)).fetchone()
+
+        if not current_cycle:
+            return None, None
+
+        cycle_num = current_cycle['cycle_number']
+
+        # Find the most recent week with the same cycle number (before current week)
+        result = conn.execute("""
+            SELECT wc.week_number, wc.year
+            FROM Week_Cycle wc
+            WHERE wc.cycle_number = ?
+              AND (wc.year < ? OR (wc.year = ? AND wc.week_number < ?))
+              AND EXISTS (
+                  SELECT 1 FROM Choices c 
+                  WHERE c.week_id = wc.week_number 
+                    AND c.year = wc.year 
+                    AND c.class_id = ?
+              )
+            ORDER BY wc.year DESC, wc.week_number DESC
+            LIMIT 1
+        """, (cycle_num, year, year, week_number, class_id)).fetchone()
+
+        if result:
+            return result['week_number'], result['year']
+
+        return None, None
+
+
+def duplicate_choices_from_previous_cycle(class_id, from_week, from_year, to_week, to_year):
+    """
+    Copy all lunch choices from one week to another for a specific class.
+    """
+    try:
+        with get_db_connection() as conn:
+            # First, delete any existing choices for the target week
+            conn.execute("""
+                DELETE FROM Choices 
+                WHERE class_id = ? AND week_id = ? AND year = ?
+            """, (class_id, to_week, to_year))
+
+            # Copy choices from previous cycle
+            conn.execute("""
+                INSERT INTO Choices (student_id, menu_item_id, class_id, week_id, year, day_of_week, timestamp)
+                SELECT student_id, menu_item_id, class_id, ?, ?, day_of_week, CURRENT_TIMESTAMP
+                FROM Choices
+                WHERE class_id = ? AND week_id = ? AND year = ?
+            """, (to_week, to_year, class_id, from_week, from_year))
+
+            conn.commit()
+
+            # Count how many choices were copied
+            count = conn.execute("""
+                SELECT COUNT(*) as total FROM Choices 
+                WHERE class_id = ? AND week_id = ? AND year = ?
+            """, (class_id, to_week, to_year)).fetchone()['total']
+
+            return True, count
+    except Exception as e:
+        print(f"Error duplicating choices: {e}")
+        return False, 0
+
 
 # ==================== ROUTES ====================
 @app.route('/')
 def index():
     """Home page with class selection"""
     return render_template('index.html', classes=get_classes())
+
 
 @app.route('/teacher_menu/<int:class_id>')
 def teacher_menu(class_id):
@@ -456,6 +619,12 @@ def teacher_menu(class_id):
     year = start_date.year
     week_cycle = get_week_cycle(selected_week)
 
+    # Check if week cycle exists
+    week_cycle_exists = week_cycle is not None
+
+    # Use cycle 1 as default for menu items if week doesn't exist
+    display_week_cycle = week_cycle if week_cycle else 1
+
     student_choices = get_week_choices_by_class(class_id, week_number, year)
     packed_lunch_days = get_packed_lunch_days(week_number, year)
     students = get_students_by_class(class_id)
@@ -465,7 +634,7 @@ def teacher_menu(class_id):
     for i in range(5):
         date = start_date + timedelta(days=i)
         is_packed = i in packed_lunch_days
-        menu_items = get_menu_items_for_day(i, week_cycle)
+        menu_items = get_menu_items_for_day(i, display_week_cycle)
 
         week_dates.append({
             'date': date.strftime('%Y-%m-%d'),
@@ -477,7 +646,7 @@ def teacher_menu(class_id):
         })
 
     available_weeks = get_available_weeks()
-    is_editable = is_week_editable(selected_week)
+    is_editable = is_week_editable(selected_week) and week_cycle_exists
 
     # Calculate navigation weeks
     previous_week = get_previous_week_monday(selected_week)
@@ -491,6 +660,10 @@ def teacher_menu(class_id):
     is_current_week = (selected_week == current_week)
     is_future_week = is_editable and not is_current_week
 
+    # Get previous cycle week info for duplication feature
+    prev_cycle_week, prev_cycle_year = get_previous_cycle_week(class_id, week_number, year)
+    has_previous_cycle = (prev_cycle_week is not None)
+
     return render_template(
         'teacher_menu.html',
         class_info=class_info,
@@ -498,7 +671,8 @@ def teacher_menu(class_id):
         student_choices=student_choices,
         week_dates=week_dates,
         week_number=week_number,
-        week_cycle=week_cycle,
+        week_cycle=display_week_cycle,
+        week_cycle_exists=week_cycle_exists,
         available_weeks=available_weeks,
         selected_week=selected_week,
         is_editable=is_editable,
@@ -509,8 +683,13 @@ def teacher_menu(class_id):
         current_week=current_week,
         packed_lunch_days=packed_lunch_days,
         has_previous_week=has_previous_week,
-        has_next_week=has_next_week
+        has_next_week=has_next_week,
+        has_previous_cycle=has_previous_cycle,
+        prev_cycle_week=prev_cycle_week,
+        prev_cycle_year=prev_cycle_year,
+        year=year
     )
+
 
 @app.route('/auto_save', methods=['POST'])
 def auto_save():
@@ -551,6 +730,49 @@ def auto_save():
         print(f"Auto-save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+@app.route('/duplicate_previous_cycle/<int:class_id>', methods=['POST'])
+def duplicate_previous_cycle(class_id):
+    """API endpoint to duplicate choices from previous same-cycle week"""
+    try:
+        data = request.get_json()
+        current_week = data.get('week_number')
+        current_year = data.get('year')
+
+        # Find previous cycle week
+        prev_week, prev_year = get_previous_cycle_week(class_id, current_week, current_year)
+
+        if not prev_week or not prev_year:
+            return jsonify({
+                'success': False,
+                'message': 'No previous cycle week found with existing choices'
+            }), 404
+
+        # Duplicate the choices
+        success, count = duplicate_choices_from_previous_cycle(
+            class_id, prev_week, prev_year, current_week, current_year
+        )
+
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Successfully copied {count} choices from Week {prev_week}/{prev_year}',
+                'count': count
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to duplicate choices'
+            }), 500
+
+    except Exception as e:
+        print(f"Duplicate error: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
 @app.route('/summary')
 def summary_board():
     """Summary dashboard showing all choices for the week"""
@@ -559,6 +781,10 @@ def summary_board():
     start_date = datetime.strptime(selected_week, '%Y-%m-%d')
     week_number = start_date.isocalendar()[1]
     week_cycle = get_week_cycle(selected_week)
+
+    # Check if week cycle exists
+    week_cycle_exists = week_cycle is not None
+    display_week_cycle = week_cycle if week_cycle else 1
 
     # Generate week dates for display
     week_dates = []
@@ -589,7 +815,8 @@ def summary_board():
         'summary_board.html',
         daily_breakdown=daily_breakdown,
         week_number=week_number,
-        week_cycle=week_cycle,
+        week_cycle=display_week_cycle,
+        week_cycle_exists=week_cycle_exists,
         week_dates=week_dates,
         start_date=week_dates[0]['display_date'],
         end_date=week_dates[4]['display_date'],
@@ -604,6 +831,7 @@ def summary_board():
         has_next_week=has_next_week
     )
 
+
 @app.route('/export_summary_excel')
 def export_summary_excel():
     """Export summary data to formatted Excel file with packed lunch day highlighting"""
@@ -613,6 +841,11 @@ def export_summary_excel():
     week_number = start_date.isocalendar()[1]
     year = start_date.year
     week_cycle = get_week_cycle(selected_week)
+
+    # Check if week exists
+    if week_cycle is None:
+        flash('Cannot export - this week has no cycle configured in the database', 'error')
+        return redirect(url_for('summary_board', week=selected_week))
 
     # Get packed lunch days for this week
     packed_lunch_days = get_packed_lunch_days(week_number, year)
@@ -807,8 +1040,8 @@ if __name__ == '__main__':
     else:
         print("✓ Database found successfully!")
 
-    print(" School Lunch Choice System")
-    print(f" Access via: http://support-sab:5000/")
-    print(" Week cycles must be manually added to database")
+    print("School Lunch Choice System")
+    print(f"Access via: http://support-sab:5000/")
+    print("Week cycles must be manually added to database")
 
     app.run(host="0.0.0.0", port=5000, debug=True)

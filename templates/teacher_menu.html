@@ -6,248 +6,280 @@
     <title>{{ class_info.name }} - Menu Selection</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>{{ class_info.name }}</h1>
-            <h2>Weekly Lunch Menu Selection</h2>
 
-            <!-- Back button on LEFT -->
-            <div class="header-nav header-nav-left">
-                <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
-            </div>
+<div class="container">
+<div class="teacher-header">
 
-            <!-- Summary button on RIGHT -->
-            <div class="header-nav">
-                <a href="{{ url_for('summary_board', week=selected_week) }}" class="nav-btn">Summary</a>
-            </div>
-        </div>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash flash-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
+    <div class="teacher-left">
+        <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
+    </div>
+
+    <div class="teacher-title">
+        <h1>{{ class_info.name }}</h1>
+        <h2>Weekly Lunch Menu Selection</h2>
+    </div>
+
+</div>
+
+
+    <!-- ================= FLASH MESSAGES ================= -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- ================= TOP WEEK BAR ================= -->
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:25px 0;">
+
+        <!-- LEFT -->
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="week-cycle">Week Cycle {{ week_cycle }}</div>
+
+            {% if is_editable and has_previous_cycle %}
+            <button id="duplicate-btn"
+                    data-class-id="{{ class_info.id }}"
+                    data-week-number="{{ week_number }}"
+                    data-year="{{ year }}"
+                    data-prev-week="{{ prev_cycle_week }}"
+                    data-prev-year="{{ prev_cycle_year }}"
+                    style="background:#8e44ad;color:white;border:none;padding:10px 16px;border-radius:6px;font-weight:600;cursor:pointer;">
+                Duplicate Previous
+            </button>
             {% endif %}
-        {% endwith %}
+        </div>
 
-        <!-- WEEK NAVIGATION BUTTONS -->
-        <div class="week-navigation">
+        <!-- CENTER -->
+        <div style="display:flex; gap:12px;">
+
             {% if has_previous_week %}
             <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=previous_week) }}"
-               class="week-nav-btn week-nav-prev">
-                <span class="arrow">←</span> Previous Week
-            </a>
-            {% else %}
-            <div class="week-message week-message-start">
-                ← This is the first week available
-            </div>
+               class="week-nav-btn week-nav-prev">← Previous Week</a>
             {% endif %}
 
             <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=current_week) }}"
-               class="week-nav-btn week-nav-current {% if selected_week == current_week %}active{% endif %}">
-                This Week
-            </a>
+               class="week-nav-btn week-nav-current active">This Week</a>
 
             {% if has_next_week %}
             <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=next_week) }}"
-               class="week-nav-btn week-nav-next">
-                Next Week <span class="arrow">→</span>
-            </a>
-            {% else %}
-            <div class="week-message week-message-end">
-                This is the last week available →
-            </div>
+               class="week-nav-btn week-nav-next">Next Week →</a>
             {% endif %}
+
         </div>
 
-        <!-- WEEK DROPDOWN (for quick jump) -->
-        <div class="week-selector">
-            <label for="week-select">Quick Jump to Week:</label>
-            <select id="week-select" onchange="location.href='{{ url_for('teacher_menu', class_id=class_info.id) }}?week=' + this.value">
-                {% for week in available_weeks %}
-                <option value="{{ week.start_date }}"
-                        {% if week.start_date == selected_week %}selected{% endif %}>
-                    {{ week.display_text }}
-                </option>
+        <!-- RIGHT -->
+        <div style="background:#ecf0f1;padding:10px 18px;border-radius:20px;font-weight:600;">
+            {{ week_dates[0].display_date }} - {{ week_dates[4].display_date }}
+        </div>
+
+    </div>
+
+    <div id="duplicate-status" class="duplicate-status"></div>
+
+    <!-- ================= QUICK JUMP ================= -->
+
+    <div class="week-selector">
+        <label>Quick Jump to Week:</label>
+        <select onchange="location.href='{{ url_for('teacher_menu', class_id=class_info.id) }}?week=' + this.value">
+            {% for week in available_weeks %}
+            <option value="{{ week.start_date }}" {% if week.start_date== selected_week %}selected{% endif %}>
+                {{ week.display_text }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- ================= READ ONLY WARNING ================= -->
+
+    {% if not is_editable %}
+    <div class="week-warning">
+        <strong>📖 Read Only Mode:</strong> This week has already started.
+    </div>
+    {% endif %}
+
+    <!-- ================= TABLE ================= -->
+
+    <div class="lunch-table-container">
+        <table class="lunch-table">
+
+            <thead>
+            <tr>
+                <th class="student-column">Student Name</th>
+                {% for day in week_dates %}
+                <th class="day-column {% if day.is_packed_lunch_day %}packed-lunch-day-header{% endif %}">
+                    {{ day.day_name }}<br>
+                    <span class="day-date">{{ day.display_date }}</span>
+                    {% if day.is_packed_lunch_day %}
+                    <br><span class="packed-lunch-badge">📦 Packed Lunch</span>
+                    {% endif %}
+                </th>
                 {% endfor %}
-            </select>
-        </div>
+            </tr>
+            </thead>
 
-                <!-- WEEK INFO DISPLAY -->
-        <div class="week-info {% if is_future_week %}future{% elif is_current_week %}current{% else %}read-only{% endif %}">
-            <div class="week-cycle">Week Cycle {{ week_cycle }}</div>
-            <div class="week-number">Week {{ week_number }}</div>
-            <div class="week-date-range">
-                {{ week_dates[0].display_date }} - {{ week_dates[4].display_date }}
-            </div>
-        </div>
+            <tbody>
 
-        {% if not is_editable %}
-        <div class="week-warning">
-            <strong> Read-Only Mode:</strong> This week has already started. Changes are not permitted.
-        </div>
-        {% endif %}
+            {% for student in students %}
+            <tr>
+                <td class="student-name">{{ student.last_name }}, {{ student.first_name }}</td>
 
-        <!-- LUNCH SELECTION TABLE -->
-        <div class="lunch-table-container">
-            <table class="lunch-table">
-                <thead>
-                <tr>
-                    <th class="student-column">Student Name</th>
-                    {% for day in week_dates %}
-                    <th class="day-column {% if day.is_packed_lunch_day %}packed-lunch-day-header{% endif %}">
-                        {{ day.day_name }}<br>
-                        <span class="day-date">{{ day.display_date }}</span>
-                        {% if day.is_packed_lunch_day %}
-                        <br><span class="packed-lunch-badge"> Packed Lunch</span>
-                        {% endif %}
-                    </th>
-                    {% endfor %}
-                </tr>
-                </thead>
-                                <tbody>
-    {% for student in students %}
-    <tr>
-        <td class="student-name">{{ student.last_name }}, {{ student.first_name }}</td>
-        {% for day in week_dates %}
-            {% set has_choice = student.id in student_choices and day.day_index in student_choices[student.id].choices %}
+                {% for day in week_dates %}
 
-            {# Determine if cell should be yellow: packed lunch day AND has a selection #}
-            {% set is_yellow = day.is_packed_lunch_day and has_choice %}
+                {% set has_choice = student.id in student_choices and day.day_index in
+                student_choices[student.id].choices %}
+                {% set is_yellow = day.is_packed_lunch_day and has_choice %}
 
-            <td class="menu-cell {% if is_yellow %}packed-lunch-day-cell{% endif %}">
-                {% if is_editable %}
-                    <!-- EDITABLE MODE -->
+                <td class="menu-cell {% if is_yellow %}packed-lunch-day-cell{% endif %}">
+
+                    {% if is_editable %}
+
                     <select class="menu-select {% if is_yellow %}packed-lunch-day-select{% endif %}"
                             data-student-id="{{ student.id }}"
                             data-date="{{ day.date }}"
                             data-class-id="{{ class_info.id }}"
                             data-is-packed-lunch="{{ 'true' if day.is_packed_lunch_day else 'false' }}">
+
                         <option value=""></option>
+
                         {% for item in day.menu_items %}
                         <option value="{{ item.id }}"
-                                {% if has_choice and student_choices[student.id].choices[day.day_index] == item.id %}
-                                selected
-                                {% endif %}>
+                                {% if has_choice and student_choices[student.id].choices[day.day_index]== item.id
+                                %}selected{% endif %}>
                             {{ item.item_name }}
                         </option>
                         {% endfor %}
+
                     </select>
-                {% else %}
-                    <!-- READ-ONLY MODE (packed lunch stays yellow)-->
+
+                    {% else %}
+
                     <div class="menu-readonly {% if is_yellow %}packed-lunch-day-readonly{% endif %}">
                         {% if has_choice %}
-                            {% set selected_item_id = student_choices[student.id].choices[day.day_index] %}
-                            {% for item in day.menu_items %}
-                                {% if item.id == selected_item_id %}
-                                    <span class="readonly-choice">{{ item.item_name }}</span>
-                                {% endif %}
-                            {% endfor %}
+                        {% set selected_item_id = student_choices[student.id].choices[day.day_index] %}
+                        {% for item in day.menu_items %}
+                        {% if item.id == selected_item_id %}
+                        <span class="readonly-choice">{{ item.item_name }}</span>
+                        {% endif %}
+                        {% endfor %}
                         {% else %}
-                            <span class="no-choice">-</span>
+                        <span class="no-choice">-</span>
                         {% endif %}
                     </div>
-                {% endif %}
-            </td>
-        {% endfor %}
-    </tr>
-    {% endfor %}
-</tbody>
-            </table>
-        </div>
 
-        </div>
+                    {% endif %}
+                </td>
 
-        <div id="save-status" class="save-status"></div>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
     </div>
 
-  <script>
+    <div id="save-status" class="save-status"></div>
+
+</div>
+
+<!-- ================= JS ================= -->
+
+<script>
+
     document.addEventListener('DOMContentLoaded', function() {
-        const selects = document.querySelectorAll('.menu-select');
-        const statusDiv = document.getElementById('save-status');
 
-        // Apply packed lunch styling on page load
-        selects.forEach(select => {
-            applyPackedLunchStyling(select);
-        });
+    const selects = document.querySelectorAll('.menu-select');
+    const statusDiv = document.getElementById('save-status');
 
-        // Auto-save functionality
-        selects.forEach(select => {
-            select.addEventListener('change', function() {
-                const studentId = this.dataset.studentId;
-                const date = this.dataset.date;
-                const classId = this.dataset.classId;
-                const menuItemId = this.value;
+    selects.forEach(select => applyPackedLunchStyling(select));
 
-                // Update styling immediately
-                applyPackedLunchStyling(this);
+    selects.forEach(select => {
+    select.addEventListener('change', function() {
 
-                // Show saving status
-                statusDiv.textContent = 'Saving...';
-                statusDiv.className = 'save-status saving';
-                statusDiv.style.display = 'block';
+    applyPackedLunchStyling(this);
 
-                fetch('/auto_save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        student_id: studentId,
-                        date: date,
-                        class_id: classId,
-                        menu_item_id: menuItemId
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        statusDiv.textContent = 'Saved!';
-                        statusDiv.className = 'save-status success';
-                    } else {
-                        statusDiv.textContent = data.message;
-                        statusDiv.className = 'save-status error';
-                    }
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none';
-                    }, 2000);
-                })
-                .catch(error => {
-                    console.error('Save error:', error);
-                    statusDiv.textContent = 'Error saving';
-                    statusDiv.className = 'save-status error';
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none';
-                    }, 3000);
-                });
-            });
-        });
+    statusDiv.textContent = 'Saving...';
+    statusDiv.className = 'save-status saving';
+    statusDiv.style.display = 'block';
 
-        /**
-         * Apply yellow highlighting if:
-         * 1. It's a packed lunch day (data-is-packed-lunch="true")
-         * 2. AND a selection has been made (value is not empty)
-         */
-        function applyPackedLunchStyling(selectElement) {
-            const isPackedLunchDay = selectElement.dataset.isPackedLunch === 'true';
-            const hasSelection = selectElement.value !== '' && selectElement.value !== null;
-            const cell = selectElement.closest('.menu-cell');
-
-            console.log(`Packed Lunch Day: ${isPackedLunchDay}, Has Selection: ${hasSelection}, Value: "${selectElement.value}"`);
-
-            if (isPackedLunchDay && hasSelection) {
-                // Add yellow highlighting
-                selectElement.classList.add('packed-lunch-day-select');
-                cell.classList.add('packed-lunch-day-cell');
-            } else {
-                // Remove yellow highlighting
-                selectElement.classList.remove('packed-lunch-day-select');
-                cell.classList.remove('packed-lunch-day-cell');
-            }
-        }
+    fetch('/auto_save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+    student_id: this.dataset.studentId,
+    date: this.dataset.date,
+    class_id: this.dataset.classId,
+    menu_item_id: this.value
+    })
+    })
+    .then(res => res.json())
+    .then(data => {
+    statusDiv.textContent = data.success ? 'Saved!' : data.message;
+    statusDiv.className = data.success ? 'save-status success' : 'save-status error';
+    setTimeout(() => statusDiv.style.display='none',2000);
     });
+    });
+    });
+
+    function applyPackedLunchStyling(select) {
+    const isPacked = select.dataset.isPackedLunch === 'true';
+    const hasVal = select.value !== '';
+    const cell = select.closest('.menu-cell');
+
+    if(isPacked && hasVal){
+    select.classList.add('packed-lunch-day-select');
+    cell.classList.add('packed-lunch-day-cell');
+    }else{
+    select.classList.remove('packed-lunch-day-select');
+    cell.classList.remove('packed-lunch-day-cell');
+    }
+    }
+
+    const duplicateBtn = document.getElementById('duplicate-btn');
+    const duplicateStatus = document.getElementById('duplicate-status');
+
+    if(duplicateBtn){
+    duplicateBtn.onclick = function(){
+
+    if(!confirm("Copy previous week choices into this week?")) return;
+
+    duplicateBtn.disabled=true;
+    duplicateBtn.textContent="Duplicating...";
+
+    fetch('/duplicate_previous_cycle/'+this.dataset.classId,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+    week_number:this.dataset.weekNumber,
+    year:this.dataset.year
+    })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+    if(data.success){
+    duplicateStatus.textContent=data.message;
+    duplicateStatus.className="duplicate-status success";
+    setTimeout(()=>location.reload(),1200);
+    }else{
+    duplicateStatus.textContent=data.message;
+    duplicateStatus.className="duplicate-status error";
+    duplicateBtn.disabled=false;
+    duplicateBtn.textContent="Duplicate Previous";
+    }
+    });
+    }
+    }
+
+    });
+
 </script>
+
 </body>
 </html>
