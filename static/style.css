@@ -1,8 +1,8 @@
 
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    margin: 25;
+    padding: 20;
     font-family: "Segoe UI", Arial, sans-serif;
 }
 
@@ -14,7 +14,7 @@ body {
 .container {
     max-width: 1400px;
     margin: auto;
-    padding: 18px;
+    padding: 38px;
 }
 
 .header-bar {
@@ -45,8 +45,8 @@ button {
     background: #2c3e50;
     color: white;
     border: none;
-    padding: 6px 14px;
-    border-radius: 6px;
+    padding: 10px 24px;
+    border-radius: 16px;
     font-size: 13px;
     cursor: pointer;
     text-decoration: none;
@@ -181,7 +181,6 @@ button:hover {
     border-radius: 10px;
 }
 
-
 .footer {
     margin-top: 20px;
     text-align: center;
@@ -197,7 +196,7 @@ body {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 50px;
 }
 
 .teacher-title {
@@ -229,7 +228,7 @@ body {
 }
 
 .teacher-header {
-    margin-bottom: 20px;
+    margin-bottom: 28px;
 }
 
 .week-selector {
@@ -242,7 +241,9 @@ body {
 
 .week-navigation,
 .top-bar {
-    margin-top: 14px;
+    margin-top: 24px;
+    justify-content: center;
+    margin-left: 60px;
 }
 
 .week-warning {
@@ -257,4 +258,10 @@ body {
     font-size: 13px;
     font-weight: 500;
     margin-top: 10px;
+}
+/* Force shift of week buttons row */
+.teacher-week-buttons {
+    display: flex;
+    justify-content: center;
+    margin-left: 105px;
 }

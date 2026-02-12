@@ -58,7 +58,7 @@
         </div>
 
         <!-- CENTER -->
-        <div style="display:flex; gap:12px;">
+        <div class="teacher-week-buttons">
 
             {% if has_previous_week %}
             <a href="{{ url_for('teacher_menu', class_id=class_info.id, week=previous_week) }}"
