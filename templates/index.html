@@ -9,8 +9,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>School Lunch Choice System</h1>
-            <h2>Select your class</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="flex-grow: 1; text-align: center;">
+                    <h1>School Lunch Choice System</h1>
+                    <h2>Select your class</h2>
+                </div>
+                <div>
+                    <a href="{{ url_for('summary_board') }}" class="nav-btn">📊 Summary</a>
+                </div>
+            </div>
         </div>
 
         <div class="class-grid">
@@ -21,7 +28,6 @@
             </a>
             {% endfor %}
         </div>
-
     </div>
 </body>
 </html>

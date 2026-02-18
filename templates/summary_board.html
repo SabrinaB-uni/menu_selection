@@ -3,63 +3,337 @@
 <head>
     <title>Weekly Lunch Summary</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+
+        .summary-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 25px;
+            margin-bottom: 40px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .page-title {
+            font-size: 36px;
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 300;
+        }
+
+        .page-subtitle {
+            color: #7f8c8d;
+            font-size: 18px;
+            margin: 5px 0;
+            font-weight: 300;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 2px solid #2c3e50;
+            color: #2c3e50;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .btn-export {
+            background: #6c8f6a;
+            border: 2px solid #6c8f6a;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-export:hover {
+            background: #5a7d58;
+            border-color: #5a7d58;
+        }
+
+        .week-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .week-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .week-cycle-badge {
+            background: #6c8f6a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .week-dates {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .week-navigation {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .week-nav-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .week-nav-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .week-nav-current {
+            background: #6c8f6a;
+        }
+
+        .week-nav-prev,
+        .week-nav-next {
+            background: #6c757d;
+        }
+
+        .week-selector {
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .week-selector select {
+            padding: 10px 14px;
+            border-radius: 6px;
+            min-width: 350px;
+            font-size: 14px;
+        }
+
+        .day-section { margin-bottom: 50px; }
+
+        .day-title-bar {
+            background: #34495e;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-title-bar.packed-day { background: #e74c3c; }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .summary-table th,
+        .summary-table td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .summary-table th {
+            background: #ecf0f1;
+            writing-mode: vertical-rl;
+            height: 110px;
+        }
+
+        .summary-table .class-header {
+            writing-mode: horizontal-tb;
+            background: #f7f9fa;
+            text-align: left;
+            min-width: 180px;
+        }
+
+        .total-row {
+            background: #d5dbdb;
+            font-weight: 600;
+        }
+
+        .no-data-message {
+            background: #f8f9fa;
+            padding: 40px;
+            text-align: center;
+            color: #777;
+        }
+
+    </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="summary-container">
 
-    <h1>Weekly Lunch Summary</h1>
+    <div class="page-header">
+        <div class="header-top">
 
-    <!-- Week Navigation -->
-    <div class="week-navigation">
+            <div>
+                <h1 class="page-title">Weekly Lunch Summary</h1>
+                <p class="page-subtitle">
+                    {% if class_info %}
+                        {{ class_info.name }} - Week {{ week_number }} (Cycle {{ week_cycle }})
+                    {% else %}
+                        All Classes - Week {{ week_number }} (Cycle {{ week_cycle }})
+                    {% endif %}
+                </p>
+            </div>
 
-        {% if has_previous_week %}
-        <a href="{{ url_for('summary_board', week=previous_week) }}" class="week-nav-btn">
-            ← Previous Week
-        </a>
-        {% endif %}
+            <div class="header-actions">
 
-        <a href="{{ url_for('summary_board', week=current_week) }}" class="week-nav-btn">
-            This Week
-        </a>
+                <a href="{% if class_info %}{{ url_for('export_summary_excel', class_id=class_info.id, week=selected_week) }}{% else %}{{ url_for('export_summary_excel', week=selected_week) }}{% endif %}"
+                   class="btn-export">
+                    📤 Export Excel
+                </a>
 
-        {% if has_next_week %}
-        <a href="{{ url_for('summary_board', week=next_week) }}" class="week-nav-btn">
-            Next Week →
-        </a>
-        {% endif %}
+                <a href="{% if class_info %}{{ url_for('teacher_menu', class_id=class_info.id, week=selected_week) }}{% else %}{{ url_for('index') }}{% endif %}"
+                   class="btn-back">
+                    ← Back {% if class_info %}to Class{% else %}to Dashboard{% endif %}
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="week-controls">
+
+            <div class="week-info">
+                <div class="week-cycle-badge">Week Cycle {{ week_cycle }}</div>
+                <div class="week-dates">
+                    {{ week_dates[0].display_date }} - {{ week_dates[4].display_date }}
+                </div>
+            </div>
+
+            <div class="week-navigation">
+
+                {% if has_previous_week %}
+                <a href="{{ url_for('summary_board', week=previous_week) }}" class="week-nav-btn week-nav-prev">
+                    ← Previous Week
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('summary_board', week=current_week) }}" class="week-nav-btn week-nav-current">
+                    This Week
+                </a>
+
+                {% if has_next_week %}
+                <a href="{{ url_for('summary_board', week=next_week) }}" class="week-nav-btn week-nav-next">
+                    Next Week →
+                </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <div class="week-selector">
+            <label>Quick Jump to Week:</label>
+            <select onchange="location.href='{{ url_for('summary_board') }}?week=' + this.value">
+                {% for week in available_weeks %}
+                <option value="{{ week.start_date }}" {% if week.start_date == selected_week %}selected{% endif %}>
+                    {{ week.display_text }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
 
     </div>
 
-    <!-- Summary Table -->
-    <table class="lunch-table">
+    {% for day in daily_data %}
+    <div class="day-section">
 
-        <thead>
-            <tr>
-                <th>Day</th>
-                <th>Menu Item</th>
-                <th>Total</th>
-            </tr>
-        </thead>
+        <div class="day-title-bar {% if day.is_packed_lunch_day %}packed-day{% endif %}">
+            {{ day.day_name }}
+        </div>
 
-        <tbody>
-            {% for day, items in summary_data.items() %}
-                {% for item, count in items.items() %}
+        {% if day.total.values()|sum > 0 %}
+
+        <table class="summary-table">
+            <thead>
                 <tr>
-                    <td>{{ day }}</td>
-                    <td>{{ item }}</td>
-                    <td>{{ count }}</td>
+                    <th class="class-header">CLASS / MENU ITEM</th>
+                    {% for item in day.menu_items %}
+                    <th>{{ item }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for cls in day.classes %}
+                <tr>
+                    <td class="class-header">{{ cls.name }}</td>
+                    {% for item in day.menu_items %}
+                    <td>{{ cls.data[item] if cls.data[item] > 0 else '-' }}</td>
+                    {% endfor %}
                 </tr>
                 {% endfor %}
-            {% endfor %}
-        </tbody>
 
-    </table>
+                <tr class="total-row">
+                    <td class="class-header">TOTAL</td>
+                    {% for item in day.menu_items %}
+                    <td>{{ day.total[item] }}</td>
+                    {% endfor %}
+                </tr>
 
-    <br>
+            </tbody>
+        </table>
 
-    <a href="{{ url_for('index') }}" class="nav-btn">← Back to Classes</a>
+        {% else %}
+        <div class="no-data-message">No lunch selections recorded</div>
+        {% endif %}
+
+    </div>
+    {% endfor %}
 
 </div>
 

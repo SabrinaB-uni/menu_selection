@@ -95,6 +95,12 @@ def get_classes():
         return conn.execute('SELECT * FROM Class ORDER BY name').fetchall()
 
 
+def get_class_by_id(class_id):
+    """Get class information by ID"""
+    with get_db_connection() as conn:
+        return conn.execute('SELECT * FROM Class WHERE id = ?', (class_id,)).fetchone()
+
+
 def get_menu_items():
     """Get all menu items sorted by name"""
     with get_db_connection() as conn:
@@ -156,6 +162,48 @@ def get_week_choices_by_class(class_id, week_number, year):
                 student_choices[student_id]['choices'][choice['day_of_week']] = choice['menu_item_id']
 
         return student_choices
+
+
+def get_class_summary_data(class_id, week_monday_str):
+    """Get summary data for a specific class and week"""
+    start_date = datetime.strptime(week_monday_str, '%Y-%m-%d')
+    week_number = start_date.isocalendar()[1]
+    year = start_date.year
+    week_cycle = get_week_cycle(week_monday_str)
+
+    if not week_cycle:
+        return {}, []
+
+    # Get all menu items available for this week cycle
+    all_menu_items = set()
+    for day in range(5):  # Monday to Friday
+        menu_items = get_menu_items_for_day(day, week_cycle)
+        for item in menu_items:
+            all_menu_items.add(item['item_name'])
+
+    all_menu_items = sorted(list(all_menu_items))
+
+    # Get student choices for this class and week
+    with get_db_connection() as conn:
+        choices = conn.execute("""
+            SELECT m.item_name, COUNT(*) as count
+            FROM Choices c
+            JOIN Menu_Items m ON c.menu_item_id = m.id
+            WHERE c.class_id = ? AND c.week_id = ? AND c.year = ?
+            GROUP BY m.item_name
+        """, (class_id, week_number, year)).fetchall()
+
+    # Create summary data dictionary
+    summary_data = {}
+    for item_name in all_menu_items:
+        summary_data[item_name] = 0
+
+    # Fill in actual counts
+    for choice in choices:
+        if choice['item_name'] in summary_data:
+            summary_data[choice['item_name']] = choice['count']
+
+    return summary_data, all_menu_items
 
 
 def get_daily_breakdown_by_class(start_date):
@@ -774,29 +822,29 @@ def duplicate_previous_cycle(class_id):
 
 
 @app.route('/summary')
-def summary_board():
-    """Summary dashboard showing all choices for the week"""
+@app.route('/summary/<int:class_id>')
+def summary_board(class_id=None):
+    """Summary dashboard - daily tables for the week"""
     selected_week = request.args.get('week', get_current_week_monday())
 
     start_date = datetime.strptime(selected_week, '%Y-%m-%d')
     week_number = start_date.isocalendar()[1]
+    year = start_date.year
     week_cycle = get_week_cycle(selected_week)
 
     # Check if week cycle exists
     week_cycle_exists = week_cycle is not None
     display_week_cycle = week_cycle if week_cycle else 1
 
-    # Generate week dates for display
-    week_dates = []
-    for i in range(5):
-        date = start_date + timedelta(days=i)
-        week_dates.append({
-            'display_date': date.strftime('%d-%b'),
-            'date': date.strftime('%Y-%m-%d')
-        })
+    if not week_cycle_exists:
+        flash('This week has no cycle configured in the database', 'error')
+        if class_id:
+            return redirect(url_for('teacher_menu', class_id=class_id))
+        else:
+            return redirect(url_for('index'))
 
-    daily_breakdown = get_daily_breakdown_by_class(selected_week)
-    available_weeks = get_available_weeks()
+    # Get packed lunch days
+    packed_lunch_days = get_packed_lunch_days(week_number, year)
 
     # Calculate navigation weeks
     previous_week = get_previous_week_monday(selected_week)
@@ -807,26 +855,127 @@ def summary_board():
     has_previous_week = week_exists(previous_week)
     has_next_week = week_exists(next_week)
 
-    # Determine week type
-    is_current_week = (selected_week == current_week)
-    is_future_week = (selected_week > current_week)
+    # Get available weeks for dropdown
+    available_weeks = get_available_weeks()
+
+    # Generate week dates for display (Monday to Friday)
+    week_dates = []
+    for i in range(5):
+        date = start_date + timedelta(days=i)
+        week_dates.append({
+            'display_date': date.strftime('%d %b'),
+            'full_date': date.strftime('%d %b %Y'),
+            'date': date.strftime('%Y-%m-%d'),
+            'day_name': date.strftime('%A')
+        })
+
+    # Get class info if specific class requested
+    class_info = None
+    if class_id:
+        class_info = get_class_by_id(class_id)
+        if not class_info:
+            flash('Class not found', 'error')
+            return redirect(url_for('index'))
+
+    # Generate daily data
+    daily_data = []
+
+    for day_index in range(5):  # Monday to Friday
+        date = start_date + timedelta(days=day_index)
+        day_name = date.strftime('%A %d %b %Y')
+        is_packed_lunch_day = day_index in packed_lunch_days
+
+        # Get menu items for this day
+        menu_items = get_menu_items_for_day(day_index, display_week_cycle)
+        menu_item_names = [item['item_name'] for item in menu_items]
+
+        if class_id:
+            # Single class summary for this day
+            with get_db_connection() as conn:
+                choices = conn.execute("""
+                    SELECT m.item_name, COUNT(*) as count
+                    FROM Choices ch
+                    JOIN Menu_Items m ON ch.menu_item_id = m.id
+                    WHERE ch.class_id = ? AND ch.week_id = ? AND ch.year = ? AND ch.day_of_week = ?
+                    GROUP BY m.item_name
+                """, (class_id, week_number, year, day_index)).fetchall()
+
+            # Organize data for single class
+            class_data = {}
+            for item_name in menu_item_names:
+                class_data[item_name] = 0
+
+            for choice in choices:
+                if choice['item_name'] in class_data:
+                    class_data[choice['item_name']] = choice['count']
+
+            daily_data.append({
+                'day_name': day_name,
+                'is_packed_lunch_day': is_packed_lunch_day,
+                'menu_items': menu_item_names,
+                'classes': [{'name': class_info['name'], 'data': class_data}],
+                'total': {item: class_data[item] for item in menu_item_names}
+            })
+
+        else:
+            # All classes summary for this day
+            all_classes = get_classes()
+
+            with get_db_connection() as conn:
+                choices = conn.execute("""
+                    SELECT ch.class_id, cl.name as class_name, m.item_name, COUNT(*) as count
+                    FROM Choices ch
+                    JOIN Class cl ON ch.class_id = cl.id
+                    JOIN Menu_Items m ON ch.menu_item_id = m.id
+                    WHERE ch.week_id = ? AND ch.year = ? AND ch.day_of_week = ?
+                    GROUP BY ch.class_id, cl.name, m.item_name
+                    ORDER BY cl.name, m.item_name
+                """, (week_number, year, day_index)).fetchall()
+
+            # Organize data for all classes
+            classes_data = []
+            totals = {}
+
+            for item_name in menu_item_names:
+                totals[item_name] = 0
+
+            for class_obj in all_classes:
+                class_data = {}
+                for item_name in menu_item_names:
+                    class_data[item_name] = 0
+
+                # Fill in actual counts for this class
+                for choice in choices:
+                    if choice['class_name'] == class_obj['name'] and choice['item_name'] in class_data:
+                        class_data[choice['item_name']] = choice['count']
+                        totals[choice['item_name']] += choice['count']
+
+                classes_data.append({
+                    'name': class_obj['name'],
+                    'data': class_data
+                })
+
+            daily_data.append({
+                'day_name': day_name,
+                'is_packed_lunch_day': is_packed_lunch_day,
+                'menu_items': menu_item_names,
+                'classes': classes_data,
+                'total': totals
+            })
 
     return render_template(
         'summary_board.html',
-        daily_breakdown=daily_breakdown,
+        daily_data=daily_data,
+        class_info=class_info,
+        selected_week=selected_week,
         week_number=week_number,
         week_cycle=display_week_cycle,
-        week_cycle_exists=week_cycle_exists,
         week_dates=week_dates,
-        start_date=week_dates[0]['display_date'],
-        end_date=week_dates[4]['display_date'],
         available_weeks=available_weeks,
-        selected_week=selected_week,
+        # Navigation data
         previous_week=previous_week,
         next_week=next_week,
         current_week=current_week,
-        is_current_week=is_current_week,
-        is_future_week=is_future_week,
         has_previous_week=has_previous_week,
         has_next_week=has_next_week
     )
@@ -1028,6 +1177,7 @@ def export_summary_excel():
         as_attachment=True,
         download_name=filename
     )
+
 
 # ==================== APPLICATION STARTUP ====================
 if __name__ == '__main__':

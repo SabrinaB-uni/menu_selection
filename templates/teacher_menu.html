@@ -10,6 +10,7 @@
 <body>
 
 <div class="container">
+
 <div class="teacher-header">
 
     <div class="teacher-left">
@@ -21,8 +22,11 @@
         <h2>Weekly Lunch Menu Selection</h2>
     </div>
 
-</div>
+    <div class="teacher-right">
+        <a href="{{ url_for('summary_board', class_id=class_info.id, week=selected_week) }}" class="nav-btn">📊 Summary</a>
+    </div>
 
+</div>
 
     <!-- ================= FLASH MESSAGES ================= -->
 

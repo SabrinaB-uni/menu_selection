@@ -1,8 +1,7 @@
-
 * {
     box-sizing: border-box;
-    margin: 25;
-    padding: 20;
+    margin: 0;
+    padding: 0;
     font-family: "Segoe UI", Arial, sans-serif;
 }
 
@@ -39,6 +38,8 @@ h2 {
     color: #555;
 }
 
+/* Buttons */
+
 .nav-btn,
 .week-nav-btn,
 button {
@@ -67,6 +68,8 @@ button:hover {
     background: #6c757d;
 }
 
+/* Cards */
+
 .class-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -83,6 +86,8 @@ button:hover {
     text-decoration: none;
 }
 
+/* Badges */
+
 .week-cycle {
     background: #6c8f6a;
     color: white;
@@ -91,6 +96,8 @@ button:hover {
     font-size: 13px;
     font-weight: 600;
 }
+
+/* Duplicate Button */
 
 #duplicate-btn {
     background: #6f2da8;
@@ -104,24 +111,45 @@ button:hover {
     background: #5a2191;
 }
 
-.duplicate-status {
-    margin-top: 6px;
-    font-size: 12px;
-    color: green;
-}
+/* Week Selector */
 
 .week-selector {
-    margin: 8px 0 12px 0;
-    font-size: 13px;
+    margin: 18px 0;
+    text-align: center;
+    font-size: 14px;
 }
+
+.week-selector label {
+    margin-right: 10px;
+    font-weight: 600;
+}
+
+/* ✅ FIXED DROPDOWN */
 
 .week-selector select {
-    height: 28px;
-    font-size: 12px;
+    width: 520px;
+    min-width: 520px;
+    height: 38px;
+    font-size: 15px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #bdc3c7;
+    background: white;
 }
 
+/* Mobile */
+
+@media (max-width: 700px) {
+    .week-selector select {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+/* Tables */
+
 .lunch-table-container {
-    margin-top: 12px;
+    margin-top: 22px;
     overflow-x: auto;
 }
 
@@ -137,17 +165,12 @@ button:hover {
 }
 
 .lunch-table th {
-    padding: 27px;
+    padding: 20px;
     text-align: center;
-    font-size: 13px;
-}
-
-.day-date {
-    font-size: 11px;
 }
 
 .lunch-table td {
-    padding: 6px 6px;
+    padding: 6px;
     border-bottom: 1px solid #ddd;
 }
 
@@ -157,94 +180,27 @@ button:hover {
 
 .student-name {
     white-space: nowrap;
-    font-size: 13px;
-    padding-left: 8px;
 }
 
 .menu-select {
     width: 100%;
     height: 28px;
-    font-size: 12px;
-    padding: 3px 6px;
 }
 
-.menu-readonly {
-    font-size: 12px;
-    padding: 5px 6px;
-}
-
-.packed-lunch-badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    background: #999;
-    color: white;
-    border-radius: 10px;
-}
-
-.footer {
-    margin-top: 50px;
-    text-align: center;
-    font-size: 12px;
-    color: #777;
-}
-
-body {
-    background: white;
-}
+/* Teacher Header */
 
 .teacher-header {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    margin-bottom: 50px;
+    margin-bottom: 28px;
 }
 
 .teacher-title {
     text-align: center;
 }
 
-.teacher-title h1 {
-    font-size: 26px;
-    margin-bottom: 2px;
-}
-
-.teacher-title h2 {
-    font-size: 16px;
-    font-weight: normal;
-    color: #555;
-}
-
-.teacher-left {
-    justify-self: start;
-}
-
-.teacher-right {
-    justify-self: end;
-}
-
-.container,
-.lunch-table-container {
-    background: white;
-}
-
-.teacher-header {
-    margin-bottom: 28px;
-}
-
-.week-selector {
-    margin-top: 18px;
-}
-
-.lunch-table-container {
-    margin-top: 22px;
-}
-
-.week-navigation,
-.top-bar {
-    margin-top: 24px;
-    justify-content: center;
-    margin-left: 60px;
-}
+/* Warnings */
 
 .week-warning {
     background: #fff3b0;
@@ -253,15 +209,6 @@ body {
     padding: 8px 14px;
     border-radius: 20px;
     display: inline-flex;
-    align-items: center;
     gap: 8px;
     font-size: 13px;
-    font-weight: 500;
-    margin-top: 10px;
-}
-/* Force shift of week buttons row */
-.teacher-week-buttons {
-    display: flex;
-    justify-content: center;
-    margin-left: 105px;
 }
