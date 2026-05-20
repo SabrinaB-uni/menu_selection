@@ -6,7 +6,6 @@
     <style>
 
         .summary-container {
-            max-width: 1300px;
             margin: 0 auto;
             padding: 30px;
             background: white;
@@ -170,10 +169,17 @@
 
         .day-title-bar.packed-day { background: #e74c3c; }
 
+        /* ✅ NEW: scroll wrapper */
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+        }
+
         .summary-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            min-width: max-content;
         }
 
         .summary-table th,
@@ -233,7 +239,7 @@
 
                 <a href="{% if class_info %}{{ url_for('export_summary_excel', class_id=class_info.id, week=selected_week) }}{% else %}{{ url_for('export_summary_excel', week=selected_week) }}{% endif %}"
                    class="btn-export">
-                    📤 Export Excel
+                     Export Excel
                 </a>
 
                 <a href="{% if class_info %}{{ url_for('teacher_menu', class_id=class_info.id, week=selected_week) }}{% else %}{{ url_for('index') }}{% endif %}"
@@ -298,6 +304,8 @@
 
         {% if day.total.values()|sum > 0 %}
 
+        <!-- ✅ ONLY structural change -->
+        <div class="table-scroll">
         <table class="summary-table">
             <thead>
                 <tr>
@@ -327,6 +335,7 @@
 
             </tbody>
         </table>
+        </div>
 
         {% else %}
         <div class="no-data-message">No lunch selections recorded</div>
