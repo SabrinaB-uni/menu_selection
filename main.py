@@ -62,21 +62,7 @@ def get_menu_items_for_day(day_of_week, week_cycle=1):
             ORDER BY item_name
         """
 
-        print("\n========== MENU DEBUG ==========")
-        print("DAY COLUMN:", day_col)
-        print("WEEK CYCLE COLUMN:", cycle_col)
-        print("QUERY:", query)
-
-        rows = conn.execute(query).fetchall()
-
-        print("ROWS FOUND:", len(rows))
-
-        for r in rows:
-            print(dict(r))
-
-        print("================================\n")
-
-        return rows
+        return conn.execute(query).fetchall()
 
 def get_students_by_class(class_id):
     with get_db_connection() as conn:
@@ -304,9 +290,10 @@ def teacher_menu(class_id):
 
         # ADMIN MODAL DATA
         all_students = conn.execute('''
-            SELECT id, first_name, last_name
-            FROM Student
-            ORDER BY last_name, first_name
+            SELECT s.id, s.first_name, s.last_name, c.name AS class_name
+            FROM Student s
+            JOIN Class c ON s.class_id = c.id
+            ORDER BY s.last_name, s.first_name
         ''').fetchall()
 
         all_classes = conn.execute('''
@@ -320,9 +307,6 @@ def teacher_menu(class_id):
             FROM Menu_Items
             ORDER BY item_name
         ''').fetchall()
-
-        print(conn)
-        print(conn.execute("PRAGMA database_list").fetchall())
 
     if class_info is None:
         flash('Class not found', 'error')
@@ -551,8 +535,10 @@ def auto_save():
         choice_week_monday = choice_date - timedelta(days=days_since_monday)
         today_days_since_monday = today.weekday()
         current_monday = today - timedelta(days=today_days_since_monday)
-        if choice_week_monday <= current_monday:
-            return jsonify({'success': False, 'message': 'Cannot edit - this week has started. Kitchen is preparing meals.'}), 403
+        previous_monday = current_monday - timedelta(days=7)
+        # Match is_week_editable(): allow current week and future weeks, block only past weeks.
+        if choice_week_monday <= previous_monday:
+            return jsonify({'success': False, 'message': 'Cannot edit - this week has already passed.'}), 403
         if save_choice(student_id, menu_item_id, class_id, date):
             return jsonify({'success': True, 'message': 'Saved'})
         else:
@@ -635,7 +621,7 @@ def summary_board(class_id=None):
                         totals[choice['item_name']] += choice['count']
                 classes_data.append({'name': class_obj['name'], 'data': class_data})
             daily_data.append({'day_name': day_name, 'is_packed_lunch_day': is_packed, 'menu_items': menu_item_names, 'classes': classes_data, 'total': totals})
-    return render_template('summary_board.html', daily_data=daily_data, class_info=class_info, selected_week=selected_week, week_number=week_number, week_cycle=display_week_cycle, week_dates=week_dates, available_weeks=available_weeks, previous_week=previous_week, next_week=next_week, current_week=current_week, has_previous_week=has_previous_week, has_next_week=has_next_week, all_menu_items=all_menu_items)
+    return render_template('summary_board.html', daily_data=daily_data, class_info=class_info, selected_week=selected_week, week_number=week_number, week_cycle=display_week_cycle, week_dates=week_dates, available_weeks=available_weeks, previous_week=previous_week, next_week=next_week, current_week=current_week, has_previous_week=has_previous_week, has_next_week=has_next_week)
 
 @app.route('/export_summary_excel')
 def export_summary_excel():
@@ -829,36 +815,98 @@ def save_menu_item():
         week_cycle2 = 1 if data.get('week_cycle2') else 0
         week_cycle3 = 1 if data.get('week_cycle3') else 0
         item_id = data.get('item_id')
+        apply_to_student_id = data.get('apply_to_student_id')
+        selected_week = data.get('selected_week')
         if not item_name:
             return jsonify({'success': False, 'message': 'Item name required'}), 400
+        if (mon + tue + wed + thu + fri) == 0:
+            return jsonify({'success': False, 'message': 'Tick at least one day so the item appears in the lunch table.'}), 400
+        if (week_cycle1 + week_cycle2 + week_cycle3) == 0:
+            return jsonify({'success': False, 'message': 'Tick at least one week cycle so the item appears in the lunch table.'}), 400
         with get_db_connection() as conn:
-            print(conn)
-            print(conn.execute("PRAGMA database_list").fetchall())
+            # Friendly check for duplicate names BEFORE the DB raises IntegrityError
+            if item_id:
+                clash = conn.execute(
+                    "SELECT id FROM Menu_Items WHERE item_name = ? AND id != ?",
+                    (item_name, int(item_id))
+                ).fetchone()
+            else:
+                clash = conn.execute(
+                    "SELECT id FROM Menu_Items WHERE item_name = ?",
+                    (item_name,)
+                ).fetchone()
+            if clash:
+                return jsonify({
+                    'success': False,
+                    'message': f"An item called '{item_name}' already exists. Pick a different name."
+                }), 409
 
             if item_id:
-                conn.execute("UPDATE Menu_Items SET item_name = ?, mon = ?, tue = ?, wed = ?, thu = ?, fri = ?, week_cycle1 = ?, week_cycle2 = ?, week_cycle3 = ? WHERE id = ?", (item_name, mon, tue, wed, thu, fri, week_cycle1, week_cycle2, week_cycle3, int(item_id)))
+                cur = conn.execute("UPDATE Menu_Items SET item_name = ?, mon = ?, tue = ?, wed = ?, thu = ?, fri = ?, week_cycle1 = ?, week_cycle2 = ?, week_cycle3 = ? WHERE id = ?", (item_name, mon, tue, wed, thu, fri, week_cycle1, week_cycle2, week_cycle3, int(item_id)))
+                if cur.rowcount == 0:
+                    return jsonify({'success': False, 'message': f"No menu item found with id {item_id}"}), 404
+                saved_item_id = int(item_id)
                 message = f"Updated '{item_name}'"
             else:
-                conn.execute("INSERT INTO Menu_Items (item_name, mon, tue, wed, thu, fri, week_cycle1, week_cycle2, week_cycle3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (item_name, mon, tue, wed, thu, fri, week_cycle1, week_cycle2, week_cycle3))
+                cur = conn.execute("INSERT INTO Menu_Items (item_name, mon, tue, wed, thu, fri, week_cycle1, week_cycle2, week_cycle3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (item_name, mon, tue, wed, thu, fri, week_cycle1, week_cycle2, week_cycle3))
+                saved_item_id = cur.lastrowid
                 message = f"Created '{item_name}'"
-                print("SAVING:")
-                print({
-                    "item_name": item_name,
-                    "mon": mon,
-                    "tue": tue,
-                    "wed": wed,
-                    "thu": thu,
-                    "fri": fri,
-                    "week_cycle1": week_cycle1,
-                    "week_cycle2": week_cycle2,
-                    "week_cycle3": week_cycle3
-                })
+
+            # Per-student assignment: if a student is picked in the Students tab,
+            # apply this menu item as their lunch choice for the currently-viewed
+            # week on every ticked day (provided the week's cycle is also ticked).
+            if apply_to_student_id and selected_week:
+                try:
+                    week_monday = datetime.strptime(selected_week, '%Y-%m-%d').date()
+                    week_number = week_monday.isocalendar()[1]
+                    year = week_monday.year
+
+                    today = datetime.now().date()
+                    current_monday = today - timedelta(days=today.weekday())
+                    previous_monday = current_monday - timedelta(days=7)
+                    if week_monday <= previous_monday:
+                        message += " (cell not updated — that week has already passed)"
+                    else:
+                        cycle_row = conn.execute(
+                            "SELECT cycle_number FROM Week_Cycle WHERE week_number = ? AND year = ?",
+                            (week_number, year)
+                        ).fetchone()
+                        if not cycle_row:
+                            message += " (cell not updated — no cycle configured for that week)"
+                        else:
+                            cycle_num = cycle_row['cycle_number']
+                            cycle_flag = {1: week_cycle1, 2: week_cycle2, 3: week_cycle3}.get(cycle_num, 0)
+                            if not cycle_flag:
+                                message += f" (cell not updated — '{item_name}' is not in Cycle {cycle_num})"
+                            else:
+                                student_row = conn.execute(
+                                    "SELECT id, first_name, last_name, class_id FROM Student WHERE id = ?",
+                                    (int(apply_to_student_id),)
+                                ).fetchone()
+                                if not student_row:
+                                    message += " (cell not updated — selected student no longer exists)"
+                                else:
+                                    day_flags = [mon, tue, wed, thu, fri]
+                                    applied = 0
+                                    for day_idx, day_on in enumerate(day_flags):
+                                        if day_on:
+                                            conn.execute(
+                                                "DELETE FROM Choices WHERE student_id = ? AND week_id = ? AND year = ? AND day_of_week = ?",
+                                                (student_row['id'], week_number, year, day_idx)
+                                            )
+                                            conn.execute(
+                                                "INSERT INTO Choices (student_id, menu_item_id, class_id, week_id, year, day_of_week, timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                                                (student_row['id'], saved_item_id, student_row['class_id'], week_number, year, day_idx)
+                                            )
+                                            applied += 1
+                                    message += f" • Applied to {student_row['last_name']}, {student_row['first_name']} on {applied} day(s)"
+                except Exception as assign_err:
+                    message += f" (cell not updated — {assign_err})"
+
             conn.commit()
         return jsonify({'success': True, 'message': message})
     except Exception as e:
-        print(f"Menu item save error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @app.route('/admin/menu_item/delete/<int:item_id>', methods=['POST'])
 def delete_menu_item(item_id):
@@ -877,6 +925,7 @@ if __name__ == '__main__':
     if not os.path.exists(DB_PATH):
         print(f"Database not found! Creating new database at: {DB_PATH}")
         init_db()
+        
         print('✓ Created menu_selection.db with all tables.')
     else:
         print("✓ Database found successfully!")

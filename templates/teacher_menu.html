@@ -130,21 +130,18 @@
 
                     {% if is_editable %}
 
-                    <select class="menu-select">
+                    <select class="menu-select"
+                            data-student-id="{{ student.id }}"
+                            data-date="{{ day.date }}"
+                            data-class-id="{{ class_info.id }}"
+                            data-is-packed-lunch="{{ 'true' if day.is_packed_lunch_day else 'false' }}">
 
                         <option value=""></option>
 
-                        <div style="background:red;color:white;padding:5px;">
-                            DEBUG COUNT: {{ day.menu_items|length }}
-                        </div>
-
                         {% for item in day.menu_items %}
 
-                        <div style="color:blue;font-weight:bold;">
-                            FOUND ITEM: {{ item.item_name }}
-                        </div>
-
-                        <option value="{{ item.id }}">
+                        <option value="{{ item.id }}"
+                                {% if has_choice and student_choices[student.id].choices[day.day_index] == item.id %}selected{% endif %}>
                             {{ item.item_name }}
                         </option>
 
@@ -299,7 +296,7 @@
 
                         {% for s in all_students %}
                         <option value="{{ s.id }}">
-                            {{ s.last_name }}, {{ s.first_name }}
+                            {{ s.last_name }}, {{ s.first_name }} ({{ s.class_name }})
                         </option>
                         {% endfor %}
 
@@ -344,7 +341,7 @@
 
             <div class="form-actions">
                 <button class="btn-save" onclick="saveStudent()">Save</button>
-                <button class="btn-clear" onclick="clearStudentForm()">Clear</button>
+                <button class="btn-clear" onclick="clearStudentForm()">New</button>
             </div>
 
             <div id="student-status" class="status-message"></div>
@@ -385,11 +382,11 @@
                 <label>Available Days:</label>
 
                 <div class="checkbox-group">
-                    <label><input type="checkbox" id="item-mon"> Monday</label>
-                    <label><input type="checkbox" id="item-tue"> Tuesday</label>
-                    <label><input type="checkbox" id="item-wed"> Wednesday</label>
-                    <label><input type="checkbox" id="item-thu"> Thursday</label>
-                    <label><input type="checkbox" id="item-fri"> Friday</label>
+                    <label><input type="checkbox" id="item-mon" checked> Monday</label>
+                    <label><input type="checkbox" id="item-tue" checked> Tuesday</label>
+                    <label><input type="checkbox" id="item-wed" checked> Wednesday</label>
+                    <label><input type="checkbox" id="item-thu" checked> Thursday</label>
+                    <label><input type="checkbox" id="item-fri" checked> Friday</label>
                 </div>
             </div>
 
@@ -397,15 +394,15 @@
                 <label>Available in Week Cycles:</label>
 
                 <div class="checkbox-group">
-                    <label><input type="checkbox" id="item-week1"> Cycle 1</label>
-                    <label><input type="checkbox" id="item-week2"> Cycle 2</label>
-                    <label><input type="checkbox" id="item-week3"> Cycle 3</label>
+                    <label><input type="checkbox" id="item-week1" checked> Cycle 1</label>
+                    <label><input type="checkbox" id="item-week2" checked> Cycle 2</label>
+                    <label><input type="checkbox" id="item-week3" checked> Cycle 3</label>
                 </div>
             </div>
 
             <div class="form-actions">
                 <button class="btn-save" onclick="saveMenuItem()">Save</button>
-                <button class="btn-clear" onclick="clearMenuItemForm()">Clear</button>
+                <button class="btn-clear" onclick="clearMenuItemForm()">New</button>
             </div>
 
             <div id="item-status" class="status-message"></div>
@@ -544,15 +541,17 @@ function showStudentStatus(e,t){
 function clearMenuItemForm(){
 
     document.getElementById('item-name').value='';
-    document.getElementById('item-mon').checked=!1;
-    document.getElementById('item-tue').checked=!1;
-    document.getElementById('item-wed').checked=!1;
-    document.getElementById('item-thu').checked=!1;
-    document.getElementById('item-fri').checked=!1;
+    // Default a fresh form to "available every day, every cycle" so new items
+    // appear on the lunch table unless the admin explicitly unticks something.
+    document.getElementById('item-mon').checked=true;
+    document.getElementById('item-tue').checked=true;
+    document.getElementById('item-wed').checked=true;
+    document.getElementById('item-thu').checked=true;
+    document.getElementById('item-fri').checked=true;
 
-    document.getElementById('item-week1').checked=!1;
-    document.getElementById('item-week2').checked=!1;
-    document.getElementById('item-week3').checked=!1;
+    document.getElementById('item-week1').checked=true;
+    document.getElementById('item-week2').checked=true;
+    document.getElementById('item-week3').checked=true;
 
     document.getElementById('item-select').value='';
     document.getElementById('item-status').style.display='none';
@@ -598,6 +597,9 @@ function saveMenuItem() {
 
     const item_name = document.getElementById('item-name').value.trim();
     const item_id = document.getElementById('item-select').value || null;
+    // Carry over the student picked in the Students tab (if any) so this save can
+    // also assign the menu item to that student for the currently-viewed week.
+    const apply_to_student_id = document.getElementById('student-select').value || null;
 
     if (!item_name) {
         showMenuItemStatus('Item name is required', 'error');
@@ -621,7 +623,10 @@ function saveMenuItem() {
 
             week_cycle1: document.getElementById('item-week1').checked,
             week_cycle2: document.getElementById('item-week2').checked,
-            week_cycle3: document.getElementById('item-week3').checked
+            week_cycle3: document.getElementById('item-week3').checked,
+
+            apply_to_student_id: apply_to_student_id,
+            selected_week: '{{ selected_week }}'
         })
     })
     .then(res => res.json())
